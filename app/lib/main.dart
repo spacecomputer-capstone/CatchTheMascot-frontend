@@ -1,3 +1,5 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'screens/1_home_screen.dart';
 import 'screens/2_location_permission_screen.dart';
@@ -9,7 +11,19 @@ import 'screens/2_location_permission_screen.dart';
 // import 'screens/8_inventory_screen.dart';
 import 'utils/routes.dart';
 
-void main() => runApp(const CatchTheMascotApp());
+// void main() => runApp(const CatchTheMascotApp());
+void main() async {
+  // Ensure Flutter widgets are initialized
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // Then run the app
+  runApp(const CatchTheMascotApp());
+}
 
 class CatchTheMascotApp extends StatelessWidget {
   const CatchTheMascotApp({super.key});

@@ -1,1 +1,13 @@
 .DS_Store
+
+# IDE
+.idea/
+
+# Flutter build artifacts
+**/build/
+**/generated_plugin_registrant.*
+
+# Firebase secrets
+**/google-services.json
+**/firebase.json
+**/firebase_options.dart
