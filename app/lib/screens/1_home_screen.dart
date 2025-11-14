@@ -15,11 +15,23 @@ class HomeScreen extends StatelessWidget {
             const Text('Welcome to Catch the Mascot!',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 20),
+
+            //location permission button
             ElevatedButton(
               onPressed: () {
                 Navigator.pushNamed(context, Routes.locationPermission);
               },
               child: const Text('Start Game'),
+            ),
+
+            const SizedBox(height: 10), // Add spacing between buttons
+
+            //test api button
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, Routes.apiTest);
+              },
+              child: const Text('Test API'),
             ),
           ],
         ),

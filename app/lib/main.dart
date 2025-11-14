@@ -9,6 +9,7 @@ import 'screens/2_location_permission_screen.dart';
 // import 'screens/6_catch_screen.dart';
 // import 'screens/7_catch_result_screen.dart';
 // import 'screens/8_inventory_screen.dart';
+import 'screens/99_api_test_screen.dart';
 import 'utils/routes.dart';
 
 // void main() => runApp(const CatchTheMascotApp());
@@ -17,9 +18,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Then run the app
   runApp(const CatchTheMascotApp());
@@ -40,13 +39,15 @@ class CatchTheMascotApp extends StatelessWidget {
       initialRoute: Routes.home,
       routes: {
         Routes.home: (context) => const HomeScreen(),
-        Routes.locationPermission: (context) => const LocationPermissionScreen(),
+        Routes.locationPermission:
+            (context) => const LocationPermissionScreen(),
         // Routes.map: (context) => const MapScreen(),
         // Routes.verification: (context) => const VerificationScreen(),
         // Routes.verificationResult: (context) => const VerificationResultScreen(),
         // Routes.catchScreen: (context) => const CatchScreen(),
         // Routes.catchResult: (context) => const CatchResultScreen(),
         // Routes.inventory: (context) => const InventoryScreen(),
+        Routes.apiTest: (context) => const ApiTestScreen(),
       },
     );
   }
