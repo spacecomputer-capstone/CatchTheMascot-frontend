@@ -4,12 +4,15 @@ import '../../lib/screens/1_home_screen.dart';
 import '../../lib/utils/routes.dart';
 
 void main() {
-  testWidgets('HomeScreen has title, text, and button', (WidgetTester tester) async {
+  testWidgets('HomeScreen has title, text, image, and button', (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
 
     // Verify title and text
     expect(find.text('Catch the Mascot'), findsOneWidget);
     expect(find.text('Welcome to Catch the Mascot!'), findsOneWidget);
+
+    // Verify image exists
+    expect(find.byType(Image), findsOneWidget);
 
     // Verify Start Game button exists
     expect(find.text('Start Game'), findsOneWidget);
@@ -17,7 +20,6 @@ void main() {
 
   testWidgets('Tapping Start Game navigates to LocationPermissionScreen route',
       (WidgetTester tester) async {
-    // Track navigation with a navigator observer
     final navigatorObserver = _MockNavigatorObserver();
 
     await tester.pumpWidget(MaterialApp(

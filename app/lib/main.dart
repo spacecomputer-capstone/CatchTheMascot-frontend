@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'screens/1_home_screen.dart';
 import 'screens/2_location_permission_screen.dart';
-// import 'screens/3_map_screen.dart';
+import 'screens/3_map_screen.dart';
 // import 'screens/4_verification_screen.dart';
 // import 'screens/5_verification_result_screen.dart';
 // import 'screens/6_catch_screen.dart';
@@ -27,7 +27,7 @@ class CatchTheMascotApp extends StatelessWidget {
       routes: {
         Routes.home: (context) => const HomeScreen(),
         Routes.locationPermission: (context) => const LocationPermissionScreen(),
-        // Routes.map: (context) => const MapScreen(),
+        Routes.map: (context) => const MapScreen(),
         // Routes.verification: (context) => const VerificationScreen(),
         // Routes.verificationResult: (context) => const VerificationResultScreen(),
         // Routes.catchScreen: (context) => const CatchScreen(),
