@@ -9,10 +9,14 @@ void main() {
       home: LocationPermissionScreen(),
     ));
 
-    // Verify title
+    // Verify AppBar title
     expect(find.text('Allow Location'), findsOneWidget);
 
-    // Verify placeholder text
-    expect(find.text('Location Permission Screen Placeholder'), findsOneWidget);
+    // Verify body text
+    expect(find.text('Catch the Mascot needs your location to play.'),
+        findsOneWidget);
+
+    // Verify button
+    expect(find.text('Enable Location'), findsOneWidget);
   });
 }
