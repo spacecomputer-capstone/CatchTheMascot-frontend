@@ -22,38 +22,6 @@ void main() async {
 
   // Initialize Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  print("Firebase initialized");
-  print(
-    'Firebase projectId: ${FirebaseFirestore.instance.app.options.projectId}',
-  );
-
-  // On web, disable persistence IMMEDIATELY before any Firestore operations
-  // This must happen before any .get(), .add(), .set(), etc.
-  if (kIsWeb) {
-    print("Running on web; disabling Firestore persistence.");
-    try {
-      await FirebaseFirestore.instance.disableNetwork();
-      FirebaseFirestore.instance.settings = Settings(persistenceEnabled: false);
-      await FirebaseFirestore.instance.enableNetwork();
-      print('Web: Firestore persistence disabled and network re-enabled');
-    } catch (e) {
-      print('Could not disable persistence: $e');
-    }
-  }
-
-  try {
-    var snapshot =
-        await FirebaseFirestore.instance
-            .collection('templatemascot0')
-            .limit(1)
-            .get();
-    print('Firestore works: ${snapshot.docs.length} docs');
-  } catch (e) {
-    print('Firestore failed: $e');
-  }
-
-  print("Initialization complete -------------------");
-  print("");
 
   // Then run the app
   runApp(const CatchTheMascotApp());

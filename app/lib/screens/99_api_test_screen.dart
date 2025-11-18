@@ -28,9 +28,21 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('API Test')),
+      appBar: AppBar(
+        title: const Text('API Test'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Fetch Mascots',
+            onPressed: () {
+              getMascots();
+            },
+          ),
+        ],
+      ),
 
       body:
+          //shows a list of added mascots in this session
           mascots.isEmpty
               ? const Center(child: Text('No mascots available.'))
               : ListView.builder(
@@ -158,71 +170,32 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
   }
 
   addMascot(Mascot mascot, BuildContext context) async {
-    print("adding mascot to firestore---------------");
+    // print("adding mascot to firestore---------------");
 
-    //debug
-    print("Checking Firebase initialization...");
-    // print("app: ${Firebase.app().name}");
+    String docName =
+        "mascot_${mascot.mascotName}_${mascot.mascotId}"; // print("docName: $docName");
 
-    print("testing quick Firestore read for collection mascots...");
     try {
-      print(
-        'Firebase projectId: ${FirebaseFirestore.instance.app.options.projectId}',
-      );
-      var snapshot =
-          await FirebaseFirestore.instance.collection('mascots').limit(1).get();
-      print('Firestore works: ${snapshot.docs.length} docs');
-    } catch (e) {
-      print('Firestore failed: $e');
-    }
-
-    //doesn't work if the collection doesn't exist
-    // print("Testing quick Firestore read for collection test...");
-    // try {
-    //   await FirebaseFirestore.instance
-    //       .collection('test')
-    //       .limit(1)
-    //       .get()
-    //       .timeout(Duration(seconds: 10));
-    //   print("Firestore READ works");
-    // } catch (e) {
-    //   print("Firestore READ FAILED: $e");
-    // }
-    //----------------
-
-    print("");
-    print(
-      "mascot to add: ${mascot.mascotName}, ${mascot.mascotId}---------------",
-    );
-    String docName = "mascot_${mascot.mascotName}_${mascot.mascotId}";
-    print("docName: $docName");
-    try {
-      print("before mascot add await");
-      //await db.collection('mascots').doc(docName).set(Mascot.toMap(mascot));
-      //   print("got collection reference");
       var data = Mascot.toMap(mascot);
-      print("map = $data");
+      //   print("map = $data");
 
       // Use REST API instead of SDK write to bypass web SDK hang issue
-      print("Using REST API to write document...");
       await _writeViaRestApi(docName, data);
-      print("after REST API write");
 
-      // use sdk write (may hang on web)
-      // print("Using SDK to write document...");
-      // await FirebaseFirestore.instance
-      //     .collection('mascots')
-      //     .doc(docName)
-      //     .set(data);
+      // use sdk write (hangs on web)
+      //   print("Using SDK to write document...");
+      //   await FirebaseFirestore.instance
+      //       .collection('mascots')
+      //       .doc(docName)
+      //       .set(data);
 
-      print("after mascot add await");
+      //add mascot to the local list
+      mascots.add(mascot);
+
       if (!mounted) return;
-      print("try before snackbar");
-      print("mascot added successfully");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Mascot added successfully')),
       );
-      print("mascot added successfully");
     } catch (e, s) {
       if (!mounted) return;
       print("failed to add mascot: $e");
@@ -236,9 +209,6 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
       ).showSnackBar(SnackBar(content: Text('Failed to add mascot: $e')));
       print("failed to add mascot: $e");
     }
-
-    print("after add attempt -------------------");
-    print("");
   }
 
   // REST API helper to bypass web SDK write hang
@@ -295,4 +265,145 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
       return {'stringValue': value.toString()};
     }
   }
+
+  // Fetch all mascots from Firestore and update the list
+  Future<void> getMascots() async {
+    print('Fetching mascots from Firestore via REST API...');
+    try {
+      final projectId = FirebaseFirestore.instance.app.options.projectId;
+      final apiKey = FirebaseFirestore.instance.app.options.apiKey;
+      final url =
+          'https://firestore.googleapis.com/v1/projects/$projectId/databases/mascot-database/documents/mascots?key=$apiKey';
+
+      print('REST API URL: $url');
+
+      final response = await http
+          .get(Uri.parse(url), headers: {'Content-Type': 'application/json'})
+          .timeout(const Duration(seconds: 10));
+
+      print('REST API response status: ${response.statusCode}');
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'REST API read failed: ${response.statusCode} ${response.body}',
+        );
+      }
+
+      final jsonResponse = jsonDecode(response.body) as Map<String, dynamic>;
+      final documents = (jsonResponse['documents'] as List<dynamic>?) ?? [];
+
+      print('Fetched ${documents.length} mascots');
+
+      setState(() {
+        mascots.clear();
+        for (final doc in documents) {
+          try {
+            final docData = doc as Map<String, dynamic>;
+            final fields = (docData['fields'] as Map<String, dynamic>?) ?? {};
+
+            // Convert REST API format back to Dart types
+            final mascot = Mascot(
+              _getStringValue(fields, 'mascotName', 'Unknown'),
+              _getIntValue(fields, 'mascotId', 0),
+              _getDoubleValue(fields, 'rarity', 0.0),
+              _getIntValue(fields, 'piId', 0),
+              _getIntValue(fields, 'respawnTime', 0),
+            );
+            mascots.add(mascot);
+            print('Added mascot: ${mascot.mascotName}');
+          } catch (e) {
+            print('Error parsing mascot document: $e');
+          }
+        }
+      });
+
+      if (mascots.isEmpty) {
+        print('No mascots found in Firestore');
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('No mascots found')));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Fetched ${mascots.length} mascots')),
+        );
+      }
+    } catch (e) {
+      print('Failed to fetch mascots: $e');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to fetch mascots: $e')));
+    }
+  }
+
+  // Helper to extract string value from REST API field
+  String _getStringValue(
+    Map<String, dynamic> fields,
+    String key,
+    String defaultValue,
+  ) {
+    final field = fields[key] as Map<String, dynamic>?;
+    return (field?['stringValue'] as String?) ?? defaultValue;
+  }
+
+  // Helper to extract int value from REST API field
+  int _getIntValue(Map<String, dynamic> fields, String key, int defaultValue) {
+    final field = fields[key] as Map<String, dynamic>?;
+    final value = field?['integerValue'] as String?;
+    return value != null ? int.parse(value) : defaultValue;
+  }
+
+  // Helper to extract double value from REST API field
+  double _getDoubleValue(
+    Map<String, dynamic> fields,
+    String key,
+    double defaultValue,
+  ) {
+    final field = fields[key] as Map<String, dynamic>?;
+    final value = field?['doubleValue'] as num?;
+    return value?.toDouble() ?? defaultValue;
+  }
+
+  //TODO: function to get all mascots from firestore
+  getAllMascots() async {
+    List<Mascot> mascots = [];
+    var snapshot = await FirebaseFirestore.instance.collection('mascots').get();
+    for (var doc in snapshot.docs) {
+      Mascot mascot = Mascot.fromMap(doc.data());
+      mascots.add(mascot);
+    }
+    return mascots;
+  }
+
+  //get mascot by id
+  getMascotById(int id) async {
+    var snapshot =
+        await FirebaseFirestore.instance
+            .collection('mascots')
+            .where('mascotId', isEqualTo: id)
+            .get();
+    if (snapshot.docs.isNotEmpty) {
+      return Mascot.fromMap(snapshot.docs.first.data());
+    } else {
+      return null;
+    }
+  }
+
+  //get mascot by name
+  getMascotByName(String name) async {
+    var snapshot =
+        await FirebaseFirestore.instance
+            .collection('mascots')
+            .where('mascotName', isEqualTo: name)
+            .get();
+    if (snapshot.docs.isNotEmpty) {
+      return Mascot.fromMap(snapshot.docs.first.data());
+    } else {
+      return null;
+    }
+  }
+
+  //TODO: test the mascot getting functions
+  // move to apis folder
+  // set up the user database: getters, setters
+  // write tests for everything
 }

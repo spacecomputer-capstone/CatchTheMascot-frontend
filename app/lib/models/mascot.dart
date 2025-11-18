@@ -16,7 +16,6 @@ class Mascot {
   );
 
   static toMap(Mascot mascot) {
-    print("converting mascot to map");
     return {
       'mascotName': mascot.mascotName,
       'mascotId': mascot.mascotId,
