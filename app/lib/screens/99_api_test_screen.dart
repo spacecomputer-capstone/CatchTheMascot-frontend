@@ -363,45 +363,6 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
     return value?.toDouble() ?? defaultValue;
   }
 
-  //TODO: function to get all mascots from firestore
-  getAllMascots() async {
-    List<Mascot> mascots = [];
-    var snapshot = await FirebaseFirestore.instance.collection('mascots').get();
-    for (var doc in snapshot.docs) {
-      Mascot mascot = Mascot.fromMap(doc.data());
-      mascots.add(mascot);
-    }
-    return mascots;
-  }
-
-  //get mascot by id
-  getMascotById(int id) async {
-    var snapshot =
-        await FirebaseFirestore.instance
-            .collection('mascots')
-            .where('mascotId', isEqualTo: id)
-            .get();
-    if (snapshot.docs.isNotEmpty) {
-      return Mascot.fromMap(snapshot.docs.first.data());
-    } else {
-      return null;
-    }
-  }
-
-  //get mascot by name
-  getMascotByName(String name) async {
-    var snapshot =
-        await FirebaseFirestore.instance
-            .collection('mascots')
-            .where('mascotName', isEqualTo: name)
-            .get();
-    if (snapshot.docs.isNotEmpty) {
-      return Mascot.fromMap(snapshot.docs.first.data());
-    } else {
-      return null;
-    }
-  }
-
   //TODO: test the mascot getting functions
   // move to apis folder
   // set up the user database: getters, setters
