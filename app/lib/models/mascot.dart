@@ -6,6 +6,7 @@ class Mascot {
   double rarity;
   int piId;
   int respawnTime; //in minutes
+  int coins; //coins to challenge
 
   Mascot(
     this.mascotName,
@@ -13,6 +14,7 @@ class Mascot {
     this.rarity,
     this.piId,
     this.respawnTime,
+    this.coins,
   );
 
   static toMap(Mascot mascot) {
@@ -22,6 +24,7 @@ class Mascot {
       'rarity': mascot.rarity,
       'piId': mascot.piId,
       'respawnTime': mascot.respawnTime,
+      'coins': mascot.coins,
     };
   }
 
@@ -32,6 +35,7 @@ class Mascot {
       map['rarity'],
       map['piId'],
       map['respawnTime'],
+      map['coins'],
     );
   }
 }
