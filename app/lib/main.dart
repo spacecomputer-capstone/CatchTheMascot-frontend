@@ -13,6 +13,8 @@ import 'screens/2_location_permission_screen.dart';
 import 'screens/99_api_test_screen.dart';
 import 'utils/routes.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; //firebasefirestore
+import 'package:app/apis/mascot_api.dart';
+import 'package:app/models/mascot.dart';
 
 // void main() => runApp(const CatchTheMascotApp());
 
@@ -22,6 +24,10 @@ void main() async {
 
   // Initialize Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  //load mascots from firestore and save highest mascotId locally
+  List<Mascot> mascots = [];
+  await getMascots(mascots);
 
   // Then run the app
   runApp(const CatchTheMascotApp());

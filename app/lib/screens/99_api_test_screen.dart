@@ -144,19 +144,61 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                         ),
                         keyboardType: TextInputType.number,
                       ),
+                      //display the highest mascotId
+                      SizedBox(height: 10),
+                      FutureBuilder<int>(
+                        future: MascotStorageService().getHighestMascotId(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const CircularProgressIndicator();
+                          } else if (snapshot.hasError) {
+                            return Text(
+                              'Error: ${snapshot.error}',
+                              style: const TextStyle(color: Colors.red),
+                            );
+                          } else {
+                            final highestId = snapshot.data ?? 0;
+                            return Text(
+                              'Next Mascot ID: ${highestId + 1}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            );
+                          }
+                        },
+                      ),
                     ],
                   ),
 
                   //buttons to cancel or add mascot
                   actions: [
+                    //cancel button
                     OutlinedButton(
                       onPressed: () {
                         Navigator.pop(context);
                       },
                       child: Text("Cancel"),
                     ),
+
+                    //add button
                     ElevatedButton(
                       onPressed: () async {
+                        //validate inputs
+                        if (nameController.text.isEmpty ||
+                            mascIDController.text.isEmpty ||
+                            rarityController.text.isEmpty ||
+                            piIDController.text.isEmpty ||
+                            respawnTimeController.text.isEmpty ||
+                            coinsController.text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Please fill in all fields'),
+                            ),
+                          );
+                          return;
+                        }
+
                         String name = nameController.text.trim();
                         int mascID = int.parse(mascIDController.text.trim());
                         double rarity = double.parse(
@@ -168,6 +210,18 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                         );
                         int coins = int.parse(coinsController.text.trim());
                         // print("trying to add mascot: $name, $mascID, $rarity, $piID, $respawnTime");
+
+                        //validate rarity
+                        if (rarity < 0.0 || rarity > 1.0) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Rarity must be between 0.0 and 1.0',
+                              ),
+                            ),
+                          );
+                          return;
+                        }
 
                         Mascot newMascot = Mascot(
                           name,
@@ -196,6 +250,86 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                         Navigator.pop(context);
                       },
                       child: const Text('Add'),
+                    ),
+
+                    //add with auto ID button
+                    ElevatedButton(
+                      onPressed: () async {
+                        //validate inputs
+                        if (nameController.text.isEmpty ||
+                            rarityController.text.isEmpty ||
+                            piIDController.text.isEmpty ||
+                            respawnTimeController.text.isEmpty ||
+                            coinsController.text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Please fill in missing fields'),
+                            ),
+                          );
+                          return;
+                        }
+
+                        String name = nameController.text.trim();
+                        // int mascID = int.parse(mascIDController.text.trim());
+                        double rarity = double.parse(
+                          rarityController.text.trim(),
+                        );
+                        int piID = int.parse(piIDController.text.trim());
+                        int respawnTime = int.parse(
+                          respawnTimeController.text.trim(),
+                        );
+                        int coins = int.parse(coinsController.text.trim());
+                        // print("trying to add mascot: $name, $mascID, $rarity, $piID, $respawnTime");
+
+                        // Mascot newMascot = Mascot(
+                        //   name,
+                        //   mascID,
+                        //   rarity,
+                        //   piID,
+                        //   respawnTime,
+                        //   coins,
+                        // );
+
+                        //validate rarity
+                        if (rarity < 0.0 || rarity > 1.0) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Rarity must be between 0.0 and 1.0',
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+
+                        Mascot newMascot = await createMascot(
+                          name,
+                          rarity,
+                          piID,
+                          respawnTime,
+                          coins,
+                        );
+
+                        // int mascID = getMascotId(newMascot);
+
+                        //add mascot to firestore
+                        await addMascot(newMascot, context, null);
+                        // print("after mascot added to firestore");
+
+                        //when a property of a stateless widget changes, we need to call
+                        //setState to rebuild the widget with the new data
+                        setState(() {});
+
+                        //clear text fields
+                        // nameController.clear();
+                        // mascIDController.clear();
+                        // rarityController.clear();
+                        // piIDController.clear();
+                        // respawnTimeController.clear();
+
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Add with Auto ID'),
                     ),
                   ],
                 ),

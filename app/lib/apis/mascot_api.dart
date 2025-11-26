@@ -6,8 +6,34 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 // import '../firebase_options.dart';
 // import 'package:firebase_core/firebase_core.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:developer' as developer;
 
-addMascot(Mascot mascot, BuildContext context, List<Mascot> mascots) async {
+// Create a new Mascot with auto-incremented mascotId
+// assumes that inputs are all validated
+// check that rarity is between 0.0 to 1.0 before calling this function
+Future<Mascot> createMascot(
+  String mascotName,
+  double rarity,
+  int piId,
+  int respawnTime,
+  int coins,
+) async {
+  //get the previous mascotID from firestore database and increment by one
+  int mascotId = 0; //default value
+
+  // mascotId = await getNextMascotId();
+  final prefs = await SharedPreferences.getInstance();
+
+  // Read current
+  int currentMax = prefs.getInt('highest_mascot_id') ?? 0;
+
+  mascotId = currentMax + 1;
+
+  return Mascot(mascotName, mascotId, rarity, piId, respawnTime, coins);
+}
+
+addMascot(Mascot mascot, BuildContext context, List<Mascot>? mascots) async {
   // print("adding mascot to firestore---------------");
 
   String docName =
@@ -21,21 +47,42 @@ addMascot(Mascot mascot, BuildContext context, List<Mascot> mascots) async {
     await _writeViaRestApi(docName, data);
 
     //add mascot to the local list
-    mascots.add(mascot);
-
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Mascot added successfully')));
-  } catch (e, s) {
-    print("failed to add mascot: $e");
-    if (e is FirebaseException) {
-      print('FirebaseException code=${e.code}, message=${e.message}');
+    if (mascots != null) {
+      mascots.add(mascot);
     }
-    print(s);
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('Failed to add mascot: $e')));
-    print("failed to add mascot: $e");
+
+    // print(
+    //   "Mascot added: ${mascot.mascotName} with ID ${mascot.mascotId}",
+    // );
+
+    //update the highest mascotId in local storage
+    final mascotStorageService = MascotStorageService();
+    await mascotStorageService.updateHighestMascotId(mascot.mascotId);
+
+    //show success snackbar
+    String id = mascot.mascotId.toString();
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Mascot added successfully with ID $id")),
+      );
+    }
+  } catch (e, s) {
+    developer.log(
+      "Failed to add mascot",
+      error: e,
+      stackTrace: s as StackTrace?,
+    );
+    if (e is FirebaseException) {
+      developer.log(
+        'FirebaseException code=${e.code}, message=${e.message}',
+        error: e,
+      );
+    }
+    if (context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to add mascot: $e')));
+    }
   }
 }
 
@@ -95,21 +142,22 @@ Map<String, dynamic> _dartValueToFirestoreValue(dynamic value) {
 }
 
 // Fetch all mascots from Firestore and update the list mascots
+// also loads the highest mascotId and saves it to the local storage
 Future<void> getMascots(List<Mascot> mascots) async {
-  print('Fetching mascots from Firestore via REST API...');
+  // print('Fetching mascots from Firestore via REST API...');
   try {
     final projectId = FirebaseFirestore.instance.app.options.projectId;
     final apiKey = FirebaseFirestore.instance.app.options.apiKey;
     final url =
         'https://firestore.googleapis.com/v1/projects/$projectId/databases/mascot-database/documents/mascots?key=$apiKey';
 
-    print('REST API URL: $url');
+    // print('REST API URL: $url');
 
     final response = await http
         .get(Uri.parse(url), headers: {'Content-Type': 'application/json'})
         .timeout(const Duration(seconds: 10));
 
-    print('REST API response status: ${response.statusCode}');
+    // print('REST API response status: ${response.statusCode}');
 
     if (response.statusCode != 200) {
       throw Exception(
@@ -120,36 +168,44 @@ Future<void> getMascots(List<Mascot> mascots) async {
     final jsonResponse = jsonDecode(response.body) as Map<String, dynamic>;
     final documents = (jsonResponse['documents'] as List<dynamic>?) ?? [];
 
-    print('Fetched ${documents.length} mascots');
+    // print('Fetched ${documents.length} mascots');
 
+    mascots.clear();
+    int maxId = 0;
+    for (final doc in documents) {
+      try {
+        final docData = doc as Map<String, dynamic>;
+        final fields = (docData['fields'] as Map<String, dynamic>?) ?? {};
 
-      mascots.clear();
-      for (final doc in documents) {
-        try {
-          final docData = doc as Map<String, dynamic>;
-          final fields = (docData['fields'] as Map<String, dynamic>?) ?? {};
+        // Convert REST API format back to Dart types
+        final mascot = Mascot(
+          _getStringValue(fields, 'mascotName', 'Unknown'),
+          _getIntValue(fields, 'mascotId', 0),
+          _getDoubleValue(fields, 'rarity', 0.0),
+          _getIntValue(fields, 'piId', 0),
+          _getIntValue(fields, 'respawnTime', 0),
+          _getIntValue(fields, 'coins', 0),
+        );
 
-          // Convert REST API format back to Dart types
-          final mascot = Mascot(
-            _getStringValue(fields, 'mascotName', 'Unknown'),
-            _getIntValue(fields, 'mascotId', 0),
-            _getDoubleValue(fields, 'rarity', 0.0),
-            _getIntValue(fields, 'piId', 0),
-            _getIntValue(fields, 'respawnTime', 0),
-            _getIntValue(fields, 'coins', 0),
-          );
-          mascots.add(mascot);
-          print('Added mascot: ${mascot.mascotName}');
-        } catch (e) {
-          print('Error parsing mascot document: $e');
+        //find maxId
+        if (mascot.mascotId > maxId) {
+          maxId = mascot.mascotId;
         }
-      }
 
+        mascots.add(mascot);
+        // print('Added mascot: ${mascot.mascotName}');
+      } catch (e) {
+        print('Error parsing mascot document: $e');
+      }
+    }
+    final mascotStorageService = MascotStorageService();
+    await mascotStorageService.updateHighestMascotId(maxId);
   } catch (e) {
     print('Failed to fetch mascots: $e');
   }
 }
 
+//helpers to convert REST API fields to Dart types ----------------------
 // Helper to extract string value from REST API field
 String _getStringValue(
   Map<String, dynamic> fields,
@@ -174,11 +230,68 @@ double _getDoubleValue(
   double defaultValue,
 ) {
   final field = fields[key] as Map<String, dynamic>?;
-  final value = field?['doubleValue'] as num?;
-  return value?.toDouble() ?? defaultValue;
+  if (field == null) return defaultValue;
+
+  // If stored as a double
+  final doubleVal = field['doubleValue'];
+  if (doubleVal != null) {
+    if (doubleVal is num) return doubleVal.toDouble();
+    if (doubleVal is String) {
+      final parsed = double.tryParse(doubleVal);
+      if (parsed != null) return parsed;
+    }
+  }
+
+  // If stored as an integer (Firestore returns integerValue as a string)
+  final intStr = field['integerValue'] as String?;
+  if (intStr != null) {
+    final parsedInt = int.tryParse(intStr);
+    if (parsedInt != null) return parsedInt.toDouble();
+    final parsedDouble = double.tryParse(intStr);
+    if (parsedDouble != null) return parsedDouble;
+  }
+
+  return defaultValue;
 }
 
-  //TODO: test the mascot getting functions
-  // move to apis folder
-  // set up the user database: getters, setters
-  // write tests for everything
+//mascot getters -----------------------------------------------
+//get mascot by mascotId from firestore through REST API
+// Future<Mascot?> getMascotById(int mascotId) async {
+//   // print("Fetching mascot with ID $mascotId from Firestore...");
+//   try {
+//     final projectId = FirebaseFirestore.instance.app.options.projectId;
+//     final apiKey = FirebaseFirestore.instance.app.options.apiKey;
+//     final url =
+//         'https://firestore.googleapis.com/v1/projects/$projectId/databases/mascot-database/documents/mascots/mascot_$mascotId?key=$apiKey';
+
+//     // print('REST API URL: $url');
+//     final response = await http
+//         .get(Uri.parse(url), headers: {'Content-Type': 'application/json'})
+//         .timeout(const Duration(seconds: 10));
+//     // print('REST API response status: ${response.statusCode}');
+//     if (response.statusCode != 200) {
+//       throw Exception(
+//         'REST API read failed: ${response.statusCode} ${response.body}',
+//       );
+//     }
+//     final jsonResponse = jsonDecode(response.body) as Map<String, dynamic>;
+//     final fields = (jsonResponse['fields'] as Map<String, dynamic>?) ?? {};
+//     final mascot = Mascot(
+//       _getStringValue(fields, 'mascotName', 'Unknown'),
+//       _getIntValue(fields, 'mascotId', 0),
+//       _getDoubleValue(fields, 'rarity', 0.0),
+//       _getIntValue(fields, 'piId', 0),
+//       _getIntValue(fields, 'respawnTime', 0),
+//       _getIntValue(fields, 'coins', 0),
+//     );
+//     return mascot;
+//   } catch (e) {
+//     print('Failed to fetch mascot: $e');
+//     return null;
+//   }
+// }
+
+
+
+
+//mascot setters -----------------------------------------------
