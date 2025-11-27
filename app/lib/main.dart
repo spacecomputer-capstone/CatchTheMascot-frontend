@@ -1,4 +1,7 @@
+import 'package:firebase_core/firebase_core.dart'; //firebase
+import 'firebase_options.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'screens/1_home_screen.dart';
 import 'screens/2_location_permission_screen.dart';
 import 'screens/3_map_screen.dart';
@@ -7,9 +10,28 @@ import 'screens/3_map_screen.dart';
 // import 'screens/6_catch_screen.dart';
 // import 'screens/7_catch_result_screen.dart';
 // import 'screens/8_inventory_screen.dart';
+import 'screens/99_api_test_screen.dart';
 import 'utils/routes.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; //firebasefirestore
+import 'package:app/apis/mascot_api.dart';
+import 'package:app/models/mascot.dart';
 
-void main() => runApp(const CatchTheMascotApp());
+// void main() => runApp(const CatchTheMascotApp());
+
+void main() async {
+  // Ensure Flutter widgets are initialized
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  //load mascots from firestore and save highest mascotId locally
+  List<Mascot> mascots = [];
+  await getMascots(mascots);
+
+  // Then run the app
+  runApp(const CatchTheMascotApp());
+}
 
 class CatchTheMascotApp extends StatelessWidget {
   const CatchTheMascotApp({super.key});
@@ -33,6 +55,7 @@ class CatchTheMascotApp extends StatelessWidget {
         // Routes.catchScreen: (context) => const CatchScreen(),
         // Routes.catchResult: (context) => const CatchResultScreen(),
         // Routes.inventory: (context) => const InventoryScreen(),
+        Routes.apiTest: (context) => ApiTestScreen(),
       },
     );
   }
