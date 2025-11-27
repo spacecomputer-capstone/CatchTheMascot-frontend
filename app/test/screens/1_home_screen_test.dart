@@ -4,39 +4,50 @@ import '../../lib/screens/1_home_screen.dart';
 import '../../lib/utils/routes.dart';
 
 void main() {
-  testWidgets('HomeScreen has title, text, image, and button', (WidgetTester tester) async {
+  testWidgets('HomeScreen shows mascot, forms, and Start Game button', (tester) async {
     await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
 
-    // Verify title and text
+    // Screen title
     expect(find.text('Catch the Mascot'), findsOneWidget);
+
+    // Welcome text
     expect(find.text('Welcome to Catch the Mascot!'), findsOneWidget);
 
-    // Verify image exists
-    expect(find.byType(Image), findsOneWidget);
+    // At least one image (background mascot)
+    expect(find.byType(Image), findsWidgets);
 
-    // Verify Start Game button exists
+    // Register appears twice (title + button)
+    expect(find.text('Register'), findsNWidgets(2));
+
+    // Log In appears twice (title + button)
+    expect(find.text('Log In'), findsNWidgets(2));
+
+    // Start Game exists
     expect(find.text('Start Game'), findsOneWidget);
   });
 
-  testWidgets('Tapping Start Game navigates to LocationPermissionScreen route',
+  testWidgets('Start Game button navigates to location permission screen',
       (WidgetTester tester) async {
     final navigatorObserver = _MockNavigatorObserver();
 
     await tester.pumpWidget(MaterialApp(
       home: const HomeScreen(),
       routes: {
-        Routes.locationPermission: (context) => const Scaffold(
-              body: Center(child: Text('Location Permission Screen Placeholder')),
-            ),
+        Routes.locationPermission: (context) =>
+            const Scaffold(body: Center(child: Text('Location Permission Screen Placeholder'))),
       },
       navigatorObservers: [navigatorObserver],
     ));
 
-    // Tap the button
+    // Ensure Start Game button is visible inside scroll view
+    await tester.ensureVisible(find.text('Start Game'));
+    await tester.pumpAndSettle();
+
+    // Tap
     await tester.tap(find.text('Start Game'));
     await tester.pumpAndSettle();
 
-    // Verify new screen is shown
+    // Verify navigation
     expect(find.text('Location Permission Screen Placeholder'), findsOneWidget);
   });
 }
