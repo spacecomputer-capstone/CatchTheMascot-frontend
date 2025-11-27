@@ -1,7 +1,6 @@
 // import 'dart:nativewrappers/_internal/vm/lib/ffi_native_type_patch.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-
 // Mascot Model
 // each mascot has a unique mascotId, but other attributes can be the same
 class Mascot {
@@ -12,6 +11,7 @@ class Mascot {
   int respawnTime; //in minutes
   int coins; //coins to challenge
 
+  //6 fields
   Mascot(
     this.mascotName,
     this.mascotId,
@@ -44,7 +44,6 @@ class Mascot {
   }
 }
 
-
 // storage to save highest mascotId locally
 class MascotStorageService {
   static const String _keyHighestMascotId = 'highest_mascot_id';
@@ -71,4 +70,3 @@ class MascotStorageService {
     }
   }
 }
-

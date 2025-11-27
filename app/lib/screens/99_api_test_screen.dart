@@ -310,10 +310,8 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                           coins,
                         );
 
-                        // int mascID = getMascotId(newMascot);
-
                         //add mascot to firestore
-                        await addMascot(newMascot, context, null);
+                        await addMascot(newMascot, context, mascots);
                         // print("after mascot added to firestore");
 
                         //when a property of a stateless widget changes, we need to call
@@ -331,11 +329,118 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                       },
                       child: const Text('Add with Auto ID'),
                     ),
+
+                    //change values button (set values from text fields to mascot with given ID)
+                    // ElevatedButton(
+                    //   onPressed: () async {
+                    //     //validate inputs
+                    //     if (mascIDController.text.isEmpty) {
+                    //       ScaffoldMessenger.of(context).showSnackBar(
+                    //         const SnackBar(
+                    //           content: Text('Please enter Mascot ID'),
+                    //         ),
+                    //       );
+                    //       return;
+                    //     }
+
+                    //     int mascId = int.parse(mascIDController.text.trim());
+
+                    //     String? name =
+                    //         nameController.text.isEmpty
+                    //             ? null
+                    //             : nameController.text.trim();
+                    //     // double? rarity =
+                    //     //     rarityController.text.isEmpty
+                    //     //         ? null
+                    //     //         : double.parse(rarityController.text.trim());
+                    //     // int? piID =
+                    //     //     piIDController.text.isEmpty
+                    //     //         ? null
+                    //     //         : int.parse(piIDController.text.trim());
+                    //     // int? respawnTime =
+                    //     //     respawnTimeController.text.isEmpty
+                    //     //         ? null
+                    //     //         : int.parse(respawnTimeController.text.trim());
+                    //     // int? coins =
+                    //     //     coinsController.text.isEmpty
+                    //     //         ? null
+                    //     //         : int.parse(coinsController.text.trim());
+
+                    //     //   await setMascotValues(
+                    //     //     mascID,
+                    //     //     name,
+                    //     //     rarity,
+                    //     //     piID,
+                    //     //     respawnTime,
+                    //     //     coins,
+                    //     //     context,
+                    //     //   );
+
+                    //     if (name != null) {
+                    //       await setMascotName(mascId, name, context);
+                    //     }
+
+                    //     setState(() {});
+
+                    //     Navigator.pop(context);
+                    //   },
+                    //   child: const Text('Set mascot values'),
+                    // ),
                   ],
                 ),
           );
         },
         child: const Icon(Icons.add),
+      ),
+
+      //another button to test mascot getter by id
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: ElevatedButton(
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder:
+                  (context) => AlertDialog(
+                    title: const Text('Get Mascot by ID'),
+                    content: TextField(
+                      controller: mascIDController,
+                      decoration: const InputDecoration(hintText: 'Mascot ID'),
+                      keyboardType: TextInputType.number,
+                    ),
+                    actions: [
+                      OutlinedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: const Text('Cancel'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () async {
+                          int mascID = int.parse(mascIDController.text.trim());
+                          Mascot? fetchedMascot = await getMascot(
+                            mascID,
+                            context,
+                          );
+                          if (fetchedMascot != null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Fetched Mascot: ${fetchedMascot.mascotName}, ID: ${fetchedMascot.mascotId}, Rarity: ${fetchedMascot.rarity}, PI ID: ${fetchedMascot.piId}, Respawn: ${fetchedMascot.respawnTime}, Coins: ${fetchedMascot.coins}',
+                                ),
+                              ),
+                            );
+                          }
+                          Navigator.pop(context);
+                        },
+                        child: const Text('Fetch'),
+                      ),
+                    ],
+                  ),
+            );
+          },
+          child: const Text('Fetch Mascot by ID'),
+        ),
       ),
     );
   }

@@ -36,8 +36,7 @@ Future<Mascot> createMascot(
 addMascot(Mascot mascot, BuildContext context, List<Mascot>? mascots) async {
   // print("adding mascot to firestore---------------");
 
-  String docName =
-      "mascot_${mascot.mascotName}_${mascot.mascotId}"; // print("docName: $docName");
+  String docName = "mascot_${mascot.mascotId}"; // print("docName: $docName");
 
   try {
     var data = Mascot.toMap(mascot);
@@ -256,42 +255,95 @@ double _getDoubleValue(
 
 //mascot getters -----------------------------------------------
 //get mascot by mascotId from firestore through REST API
-// Future<Mascot?> getMascotById(int mascotId) async {
-//   // print("Fetching mascot with ID $mascotId from Firestore...");
-//   try {
-//     final projectId = FirebaseFirestore.instance.app.options.projectId;
-//     final apiKey = FirebaseFirestore.instance.app.options.apiKey;
-//     final url =
-//         'https://firestore.googleapis.com/v1/projects/$projectId/databases/mascot-database/documents/mascots/mascot_$mascotId?key=$apiKey';
+Future<Mascot?> getMascot(int mascotId, [BuildContext? context]) async {
+  // print("Fetching mascot with ID $mascotId from Firestore...");
+  try {
+    final projectId = FirebaseFirestore.instance.app.options.projectId;
+    final apiKey = FirebaseFirestore.instance.app.options.apiKey;
+    final url =
+        'https://firestore.googleapis.com/v1/projects/$projectId/databases/mascot-database/documents/mascots/mascot_$mascotId?key=$apiKey';
 
-//     // print('REST API URL: $url');
-//     final response = await http
-//         .get(Uri.parse(url), headers: {'Content-Type': 'application/json'})
-//         .timeout(const Duration(seconds: 10));
-//     // print('REST API response status: ${response.statusCode}');
-//     if (response.statusCode != 200) {
-//       throw Exception(
-//         'REST API read failed: ${response.statusCode} ${response.body}',
+    // print('REST API URL: $url');
+    final response = await http
+        .get(Uri.parse(url), headers: {'Content-Type': 'application/json'})
+        .timeout(const Duration(seconds: 10));
+
+    // If mascot not found, show a snackbar and return null.
+    if (response.statusCode == 404) {
+      if (context != null && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Mascot with ID $mascotId not found')),
+        );
+      }
+      print('Mascot with ID $mascotId not found');
+      return null;
+    }
+
+    // print('REST API response status: ${response.statusCode}');
+    if (response.statusCode != 200) {
+      throw Exception(
+        'REST API read failed: ${response.statusCode} ${response.body}',
+      );
+    }
+    final jsonResponse = jsonDecode(response.body) as Map<String, dynamic>;
+    final fields = (jsonResponse['fields'] as Map<String, dynamic>?) ?? {};
+    final mascot = Mascot(
+      _getStringValue(fields, 'mascotName', 'Unknown'),
+      _getIntValue(fields, 'mascotId', 0),
+      _getDoubleValue(fields, 'rarity', 0.0),
+      _getIntValue(fields, 'piId', 0),
+      _getIntValue(fields, 'respawnTime', 0),
+      _getIntValue(fields, 'coins', 0),
+    );
+    return mascot;
+  } catch (e) {
+    print('Failed to fetch mascot: $e');
+    return null;
+  }
+}
+
+//mascot setters -----------------------------------------------
+
+//set mascot values by mascotId
+// Future<void> setMascot(
+//   int mascotId,
+//   String newName, [
+//   BuildContext? context,
+// ]) async {
+//   String docName = "mascot_$mascotId";
+
+//   //get previous mascot to check existence and get previous values
+//   Mascot? mascot = await getMascot(mascotId, context); //check that mascot exists
+//   if (mascot == null) {return;} // Mascot not found, exit
+
+
+//   try {
+//     var data = {'mascotName': newName, };
+
+//     // Use REST API instead of SDK write to bypass web SDK hang issue
+//     await _writeViaRestApi(docName, data);
+
+//     //success message
+//     if (context != null && context.mounted) {
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         SnackBar(
+//           content: Text('Mascot name updated for ID $mascotId to $newName'),
+//         ),
 //       );
 //     }
-//     final jsonResponse = jsonDecode(response.body) as Map<String, dynamic>;
-//     final fields = (jsonResponse['fields'] as Map<String, dynamic>?) ?? {};
-//     final mascot = Mascot(
-//       _getStringValue(fields, 'mascotName', 'Unknown'),
-//       _getIntValue(fields, 'mascotId', 0),
-//       _getDoubleValue(fields, 'rarity', 0.0),
-//       _getIntValue(fields, 'piId', 0),
-//       _getIntValue(fields, 'respawnTime', 0),
-//       _getIntValue(fields, 'coins', 0),
+//     print("Mascot name updated for ID $mascotId to $newName");
+//   } catch (e, s) {
+//     developer.log(
+//       "Failed to update mascot name",
+//       error: e,
+//       stackTrace: s as StackTrace?,
 //     );
-//     return mascot;
-//   } catch (e) {
-//     print('Failed to fetch mascot: $e');
-//     return null;
+//     if (e is FirebaseException) {
+//       developer.log(
+//         'FirebaseException code=${e.code}, message=${e.message}',
+//         error: e,
+//       );
+//     }
 //   }
 // }
 
-
-
-
-//mascot setters -----------------------------------------------
