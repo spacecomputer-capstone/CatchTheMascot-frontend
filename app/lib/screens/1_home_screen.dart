@@ -4,6 +4,7 @@ import 'dart:ui';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
+  static bool debug = false;
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +63,10 @@ class HomeScreen extends StatelessWidget {
 
                     const Text(
                       'Welcome to Catch the Mascot!',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
 
                     const SizedBox(height: 20),
@@ -75,6 +79,17 @@ class HomeScreen extends StatelessWidget {
                     ),
 
                     const SizedBox(height: 60),
+
+                    if (debug == true) ...[
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pushNamed(context, Routes.apiTest);
+                        },
+                        child: const Text('Test API'),
+                      ),
+
+                      const SizedBox(height: 60),
+                    ],
                   ],
                 ),
               ),
@@ -104,21 +119,14 @@ class HomeScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.grey.shade400),
         boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 3,
-            offset: Offset(0, 2),
-          ),
+          BoxShadow(color: Colors.black12, blurRadius: 3, offset: Offset(0, 2)),
         ],
       ),
       child: Column(
         children: [
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
 
           const SizedBox(height: 15),
