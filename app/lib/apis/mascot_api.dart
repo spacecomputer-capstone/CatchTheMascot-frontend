@@ -198,7 +198,7 @@ Future<void> getMascots(List<Mascot> mascots) async {
       }
     }
     final mascotStorageService = MascotStorageService();
-    await mascotStorageService.updateHighestMascotId(maxId);
+    await mascotStorageService.saveHighestMascotId(maxId);
   } catch (e) {
     print('Failed to fetch mascots: $e');
   }
@@ -382,5 +382,60 @@ Future<void> setMascot(
         error: e,
       );
     }
+  }
+}
+
+//delete mascot by mascotId
+Future<void> deleteMascot(
+  int mascotId,
+  List<Mascot>? mascots, [
+  BuildContext? context,
+]) async {
+  if (mascotId < 0) {
+    if (context != null && context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Invalid mascot ID')));
+    }
+    return;
+  }
+  String docName = "mascot_$mascotId";
+
+  try {
+    // Use REST API instead of SDK write to bypass web SDK hang issue
+    final projectId = FirebaseFirestore.instance.app.options.projectId;
+    final apiKey = FirebaseFirestore.instance.app.options.apiKey;
+    final url =
+        'https://firestore.googleapis.com/v1/projects/$projectId/databases/mascot-database/documents/mascots/$docName?key=$apiKey';
+
+    final response = await http
+        .delete(Uri.parse(url), headers: {'Content-Type': 'application/json'})
+        .timeout(const Duration(seconds: 10));
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'REST API delete failed: ${response.statusCode} ${response.body}',
+      );
+    }
+
+    //success message
+    if (context != null && context.mounted) {
+      //remove mascot from local list
+      mascots?.removeWhere((mascot) => mascot.mascotId == mascotId);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Mascot ID $mascotId is no longer in the database'),
+        ),
+      );
+    }
+  } catch (e) {
+    //snackbar error message
+    if (context != null && context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to delete mascot: $e')));
+    }
+    print('Failed to delete mascot: $e');
   }
 }

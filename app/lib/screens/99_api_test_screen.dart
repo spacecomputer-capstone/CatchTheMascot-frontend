@@ -181,6 +181,30 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                       child: Text("Cancel"),
                     ),
 
+                    //delete button
+                    OutlinedButton(
+                      onPressed: () async {
+                        //validate inputs
+                        if (mascIDController.text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Please enter Mascot ID'),
+                            ),
+                          );
+                          return;
+                        }
+
+                        int mascId = int.parse(mascIDController.text.trim());
+
+                        await deleteMascot(mascId, mascots, context);
+
+                        setState(() {});
+
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Delete Mascot by ID'),
+                    ),
+
                     //add button
                     ElevatedButton(
                       onPressed: () async {
