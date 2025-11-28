@@ -312,8 +312,7 @@ Future<void> setMascot(
   double? newRarity,
   int? newPiId,
   int? newRespawnTime,
-  int? newCoins,
-  List<Mascot>? mascots, [
+  int? newCoins, [
   BuildContext? context,
 ]) async {
   String docName = "mascot_$mascotId";
@@ -334,6 +333,16 @@ Future<void> setMascot(
     newPiId ??= mascot.piId;
     newRespawnTime ??= mascot.respawnTime;
     newCoins ??= mascot.coins;
+  }
+
+  //vaidate rarity
+  if (newRarity < 0.0 || newRarity > 1.0) {
+    if (context != null && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Rarity must be between 0.0 and 1.0')),
+      );
+    }
+    return;
   }
 
   try {

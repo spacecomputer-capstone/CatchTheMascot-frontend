@@ -364,7 +364,6 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                           piID,
                           respawnTime,
                           coins,
-                          mascots,
                           context,
                         );
 
