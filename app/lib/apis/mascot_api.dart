@@ -305,45 +305,73 @@ Future<Mascot?> getMascot(int mascotId, [BuildContext? context]) async {
 //mascot setters -----------------------------------------------
 
 //set mascot values by mascotId
-// Future<void> setMascot(
-//   int mascotId,
-//   String newName, [
-//   BuildContext? context,
-// ]) async {
-//   String docName = "mascot_$mascotId";
+//inputs: all fields to be updated, input as null if no change
+Future<void> setMascot(
+  int mascotId,
+  String? newName,
+  double? newRarity,
+  int? newPiId,
+  int? newRespawnTime,
+  int? newCoins,
+  List<Mascot>? mascots, [
+  BuildContext? context,
+]) async {
+  String docName = "mascot_$mascotId";
 
-//   //get previous mascot to check existence and get previous values
-//   Mascot? mascot = await getMascot(mascotId, context); //check that mascot exists
-//   if (mascot == null) {return;} // Mascot not found, exit
+  //get previous mascot to check existence and get previous values
+  Mascot? mascot = await getMascot(
+    mascotId,
+    context,
+  ); //check that mascot exists
+  if (mascot == null) {
+    return;
+  } // Mascot not found, exit
+  else {
+    // don't update null fields
+    //this means if newName is null, assign mascot.mascotName to newName
+    newName ??= mascot.mascotName;
+    newRarity ??= mascot.rarity;
+    newPiId ??= mascot.piId;
+    newRespawnTime ??= mascot.respawnTime;
+    newCoins ??= mascot.coins;
+  }
 
+  try {
+    var data = {
+      'mascotId': mascotId,
+      'mascotName': newName,
+      'rarity': newRarity,
+      'piId': newPiId,
+      'respawnTime': newRespawnTime,
+      'coins': newCoins,
+    };
 
-//   try {
-//     var data = {'mascotName': newName, };
+    // Use REST API instead of SDK write to bypass web SDK hang issue
+    await _writeViaRestApi(docName, data);
 
-//     // Use REST API instead of SDK write to bypass web SDK hang issue
-//     await _writeViaRestApi(docName, data);
-
-//     //success message
-//     if (context != null && context.mounted) {
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         SnackBar(
-//           content: Text('Mascot name updated for ID $mascotId to $newName'),
-//         ),
-//       );
-//     }
-//     print("Mascot name updated for ID $mascotId to $newName");
-//   } catch (e, s) {
-//     developer.log(
-//       "Failed to update mascot name",
-//       error: e,
-//       stackTrace: s as StackTrace?,
-//     );
-//     if (e is FirebaseException) {
-//       developer.log(
-//         'FirebaseException code=${e.code}, message=${e.message}',
-//         error: e,
-//       );
-//     }
-//   }
-// }
-
+    //success message
+    if (context != null && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Mascot ID $mascotId updated successfully')),
+      );
+    }
+  } catch (e, s) {
+    //snackbar error message
+    if (context != null && context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to update mascot: $e')));
+    }
+    developer.log(
+      "Failed to update mascot",
+      error: e,
+      stackTrace: s as StackTrace?,
+    );
+    if (e is FirebaseException) {
+      developer.log(
+        'FirebaseException code=${e.code}, message=${e.message}',
+        error: e,
+      );
+    }
+  }
+}
