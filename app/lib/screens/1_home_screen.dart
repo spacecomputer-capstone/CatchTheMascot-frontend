@@ -4,7 +4,7 @@ import 'dart:ui';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
-  static bool debug = false;
+  static bool debug = true; //set to true to show API test button
 
   @override
   Widget build(BuildContext context) {
