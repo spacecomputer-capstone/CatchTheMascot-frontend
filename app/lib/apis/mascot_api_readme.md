@@ -22,6 +22,8 @@
 2. before using the mascot API, load the mascots once - this can be done in main.dart, before running the app (this saves the highest mascotId locally)
     `List<Mascot> mascots = [];`
     `await getMascots(mascots);`
+
+*the following are in no particular order*
 3. to add a mascot to the database:
     1. create a mascot: `createMascot(String mascotName, double rarity, int piId, int respawnTime, int coins,)`
     2. add mascot: `addMascot(Mascot mascot, BuildContext context, List<Mascot>? mascots)`
