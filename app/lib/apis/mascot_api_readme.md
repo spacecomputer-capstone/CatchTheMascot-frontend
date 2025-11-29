@@ -30,4 +30,10 @@
         - list of mascots is optional to locally store all added mascots
 4. to get a list of all mascots:
     `Future<void> getMascots(List<Mascot> mascots)`
+5. to get a mascot object by mascotId (context is optional for pop up messages, pass in null if not using):
+    `getmascot(int mascotId, [BuildContext? context])`
+6. to set mascot fields (by mascotId, all fields all optional except mascotId)
+    `setMascot(int mascotId, String? newName, double? newRarity, int newPiId, int? newRespawnTime, int? newCoins, [BuildContext? context,])`
+7. to delete a mascot (by mascotId)
+    `deleteMascot(int mascotId, List<Mascot>? mascots, [BuildContext? context,])`
 *example code can be found in CatchTheMascot-frontend\app\lib\screens\99_api_test_screen.dart*

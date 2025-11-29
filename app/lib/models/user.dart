@@ -1,7 +1,7 @@
 // User Model
 class User {
   String username;
-  String password;
+  String password; //TODO: Hash password before storing
   List<String> caughtMascots; //list of mascotIds as references
   List<String> uncaughtMascots; //list of mascotIds as references
   List<int> visitedPis; //list of piIds
