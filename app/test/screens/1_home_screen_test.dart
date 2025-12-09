@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import '../../lib/screens/1_home_screen.dart';
-import '../../lib/utils/routes.dart';
+import 'package:app/screens/1_home_screen.dart';
+import 'package:app/utils/routes.dart';
 
 void main() {
   testWidgets('HomeScreen shows mascot, forms, and Start Game button', (tester) async {

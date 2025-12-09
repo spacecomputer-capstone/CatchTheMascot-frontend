@@ -2,17 +2,11 @@ import 'package:app/models/user.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 // import '../utils/routes.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 // import '../firebase_options.dart';
 // import 'package:firebase_core/firebase_core.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:developer' as developer;
-
-
 
 // add user
 Future<User> addUser(User user, BuildContext context) async {
@@ -41,9 +35,11 @@ Future<User> addUser(User user, BuildContext context) async {
   return user;
 }
 
-
 // helpter functions ---------------------------------
-Future<void> _writeUserViaRestApi(String docId, Map<String, dynamic> data) async {
+Future<void> _writeUserViaRestApi(
+  String docId,
+  Map<String, dynamic> data,
+) async {
   final projectId = FirebaseFirestore.instance.app.options.projectId;
   final url =
       'https://firestore.googleapis.com/v1/projects/$projectId/databases/mascot-database/documents/users/$docId';
@@ -79,6 +75,14 @@ Future<void> _writeUserViaRestApi(String docId, Map<String, dynamic> data) async
 
 // Convert Dart values to Firestore REST format
 Map<String, dynamic> _dartValueToFirestoreValue(dynamic value) {
+  //TODO: if value is an array, return as arrayValue
+  // if (value is List) {
+  //   return {
+  //     'arrayValue': {
+  //       'values': value.map((item) => _dartValueToFirestoreValue(item)).toList(),
+  //     },
+  //   };
+  // }
   if (value is String) {
     return {'stringValue': value};
   } else if (value is int) {
@@ -96,7 +100,6 @@ Map<String, dynamic> _dartValueToFirestoreValue(dynamic value) {
     return {'stringValue': value.toString()};
   }
 }
-
 
 //helpers to convert REST API fields to Dart types ----------------------
 // Helper to extract string value from REST API field

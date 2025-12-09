@@ -1,23 +1,20 @@
-//screen to test apis
+//screen to test mascot apis
 
 import 'package:app/models/mascot.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 // import '../utils/routes.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 // import '../firebase_options.dart';
 // import 'package:firebase_core/firebase_core.dart';
 import 'package:app/apis/mascot_api.dart';
 
-class ApiTestScreen extends StatefulWidget {
-  const ApiTestScreen({super.key});
+class MascotApiTestScreen extends StatefulWidget {
+  const MascotApiTestScreen({super.key});
 
   @override
-  State<ApiTestScreen> createState() => _ApiTestScreenState();
+  State<MascotApiTestScreen> createState() => _MascotApiTestScreen();
 }
 
-class _ApiTestScreenState extends State<ApiTestScreen> {
+class _MascotApiTestScreen extends State<MascotApiTestScreen> {
   //   ApiTestScreen({super.key});
 
   var nameController = TextEditingController();
@@ -146,8 +143,6 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                         ),
                         keyboardType: TextInputType.number,
                       ),
-
-                      
                       //display the highest mascotId
                       SizedBox(height: 10),
                       FutureBuilder<int>(

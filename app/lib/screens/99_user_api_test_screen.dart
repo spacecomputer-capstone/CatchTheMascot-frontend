@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
 import '../utils/routes.dart';
 import 'dart:ui';
+import 'package:app/models/user.dart';
+import 'package:app/apis/user_api.dart';
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
-  static bool debug = true; //set to true to show API test button
+class UserApiTestScreen extends StatefulWidget {
+  const UserApiTestScreen({super.key});
+  // static bool debug = true; //set to true to show API test button
 
+  @override
+  State<UserApiTestScreen> createState() => _UserApiTestScreenState();
+}
+
+class _UserApiTestScreenState extends State<UserApiTestScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Catch the Mascot')),
+      appBar: AppBar(title: const Text('User Registration and Login')),
       body: Stack(
         alignment: Alignment.center,
         children: [
@@ -42,18 +49,20 @@ class HomeScreen extends StatelessWidget {
               child: SingleChildScrollView(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
+
                   children: [
                     const SizedBox(height: 60),
 
-                    _formBox(
+                    _registrationFormBox(
                       title: "Register",
                       buttonText: "Register",
-                      onPressed: () {},
+                      // onPressed: () {},
+                      context: context,
                     ),
 
                     const SizedBox(height: 25),
 
-                    _formBox(
+                    _loginFormBox(
                       title: "Log In",
                       buttonText: "Log In",
                       onPressed: () {},
@@ -80,25 +89,16 @@ class HomeScreen extends StatelessWidget {
 
                     const SizedBox(height: 60),
 
-                    if (debug == true) ...[
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, Routes.apiTest);
-                        },
-                        child: const Text('Test API'),
-                      ),
-                      
-                      const SizedBox(height: 10),
+                    // if (debug == true) ...[
+                    // ElevatedButton(
+                    //   onPressed: () {
+                    //     Navigator.pushNamed(context, Routes.apiTest);
+                    //   },
+                    //   child: const Text('Test API'),
+                    // ),
 
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, Routes.userApiTest);
-                        },
-                        child: const Text('Test user API'),
-                      ),
-
-                      const SizedBox(height: 60),
-                    ],
+                    // const SizedBox(height: 60),
+                    // ],
                   ],
                 ),
               ),
@@ -112,7 +112,105 @@ class HomeScreen extends StatelessWidget {
   // ----------------------------------------------------
   // REUSABLE BOX WITH USERNAME, PASSWORD, AND BUTTON
   // ----------------------------------------------------
-  Widget _formBox({
+  Widget _registrationFormBox({
+    required String title,
+    required String buttonText,
+    // required VoidCallback onPressed,
+    required BuildContext context,
+  }) {
+    final usernameController = TextEditingController();
+    final passwordController = TextEditingController();
+
+    return Container(
+      width: 280,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.shade400),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 3, offset: Offset(0, 2)),
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(
+            title,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+
+          const SizedBox(height: 15),
+
+          TextField(
+            controller: usernameController,
+            decoration: const InputDecoration(
+              labelText: 'Username',
+              border: OutlineInputBorder(),
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          TextField(
+            controller: passwordController,
+            obscureText: true,
+            decoration: const InputDecoration(
+              labelText: 'Password',
+              border: OutlineInputBorder(),
+            ),
+          ),
+
+          const SizedBox(height: 18),
+
+          SizedBox(
+            width: 140,
+            child: ElevatedButton(
+              onPressed: () async {
+                // Registration logic here
+                if (usernameController.text.isEmpty ||
+                    passwordController.text.isEmpty) {
+                  // Show error message if username or password is empty
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Please fill in both username and password',
+                      ),
+                    ),
+                  );
+                  return;
+                }
+
+                // Proceed with registration (e.g., call API)
+                String username = usernameController.text.trim();
+                String password = passwordController.text.trim();
+                int startingCoins = 0;
+
+                User newUser = User(
+                  username,
+                  password,
+                  [],
+                  [],
+                  [],
+                  startingCoins,
+                );
+
+                await addUser(newUser, context);
+
+                setState(() {});
+
+                //clear text fields
+                usernameController.clear();
+                passwordController.clear();
+              },
+              child: Text(buttonText),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _loginFormBox({
     required String title,
     required String buttonText,
     required VoidCallback onPressed,
@@ -148,7 +246,7 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
 
           TextField(
             controller: passwordController,
