@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'screens/3.1_catch_mascot_mapbox_screen.dart';
+import 'screens/3.1_mapbox_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();

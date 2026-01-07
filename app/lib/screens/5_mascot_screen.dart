@@ -192,17 +192,30 @@ class _MascotScreenState extends State<MascotScreen>
 
   Color _statusColor() {
     if (_isVerifying) return Colors.amber.shade300;
-    if (_hasCaughtMascot) return Colors.lightGreenAccent.shade400;
-    if (_verificationStatus.startsWith('Verification failed') ||
-        _verificationStatus.startsWith('An error')) {
+
+    final msg = _verificationStatus;
+
+    // 🔴 Anything that failed / timed out -> red
+    if (msg.startsWith('Verification failed') ||
+        msg.startsWith('Verification timed out') ||  // NEW
+        msg.startsWith('An error')) {
       return Colors.redAccent.shade200;
     }
-    if (_verificationStatus.contains('slipped') ||
-        _verificationStatus.contains('escaped')) {
+
+    // 🟠 Soft fail / escaped vibe
+    if (msg.contains('slipped') || msg.contains('escaped')) {
       return Colors.orangeAccent.shade200;
     }
+
+    // 🟢 Success state
+    if (_hasCaughtMascot) {
+      return Colors.lightGreenAccent.shade400;
+    }
+
+    // Default neutral
     return Colors.white70;
   }
+
 
   // === UI BUILDERS ===
 
