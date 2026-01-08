@@ -10,6 +10,16 @@ import 'dart:convert';
 
 // add user
 Future<User> addUser(User user, BuildContext context) async {
+  if (await checkUserExists(user.username)) {
+    //show error message
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('User ${user.username} already exists!')),
+      );
+    }
+    throw Exception('User ${user.username} already exists');
+  }
+
   String docName = user.username;
 
   try {
@@ -34,6 +44,35 @@ Future<User> addUser(User user, BuildContext context) async {
 
   return user;
 }
+
+//check if user exists
+Future<bool> checkUserExists(String username) async {
+
+  final projectId = FirebaseFirestore.instance.app.options.projectId;
+  final url =
+      'https://firestore.googleapis.com/v1/projects/$projectId/databases/mascot-database/documents/users/$username';
+
+  // Get the API key from Firebase config
+  final apiKey = FirebaseFirestore.instance.app.options.apiKey;
+
+  final response = await http
+      .get(
+        Uri.parse('$url?key=$apiKey'),
+        headers: {'Content-Type': 'application/json'},
+      )
+      .timeout(const Duration(seconds: 15));
+
+  if (response.statusCode == 200) {
+    return true; // User exists
+  } else if (response.statusCode == 404) {
+    return false; // User does not exist
+  } else {
+    throw Exception(
+      'Error checking user existence: ${response.statusCode} ${response.body}',
+    );
+  }
+}
+
 
 // helpter functions ---------------------------------
 Future<void> _writeUserViaRestApi(
