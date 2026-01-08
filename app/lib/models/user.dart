@@ -10,10 +10,10 @@ class User {
   User(
     this.username,
     this.password,
-    this.caughtMascots,
-    this.uncaughtMascots,
-    this.visitedPis,
-    this.coins,
+    this.caughtMascots, //mascots caught by the user
+    this.uncaughtMascots, //mascots that have been challenged but not yet caught
+    this.visitedPis, //pis that the user has physically visited
+    this.coins, //in-game currency
   );
 
   static toMap(User user) {

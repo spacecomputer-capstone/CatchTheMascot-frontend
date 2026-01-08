@@ -9,7 +9,7 @@ import 'screens/3_map_screen.dart';
 // import 'screens/6_catch_screen.dart';
 // import 'screens/7_catch_result_screen.dart';
 // import 'screens/8_inventory_screen.dart';
-import 'screens/99_api_test_screen.dart';
+import 'screens/99_mascot_api_test_screen.dart';
 import 'utils/routes.dart';
 //firebasefirestore
 import 'package:app/apis/mascot_api.dart';
