@@ -1,0 +1,203 @@
+.
+├── .dart_tool
+│   ├── chrome-device
+│   │   └── Default
+│   ├── dartpad
+│   │   └── web_plugin_registrant.dart
+│   ├── flutter_build
+│   │   ├── 30cefa3a749e190ffe21ef85c3240f0b
+│   │   └── e229e86992a32d82f9798d6635eaae07
+│   ├── package_config.json
+│   ├── package_graph.json
+│   └── version
+├── .flutter-plugins-dependencies
+├── .gitignore
+├── .idea
+│   ├── .gitignore
+│   ├── app.iml
+│   ├── modules.xml
+│   └── workspace.xml
+├── .metadata
+├── PROJECT_TREE.txt
+├── README.md
+├── analysis_options.yaml
+├── android
+│   ├── .gitignore
+│   ├── .gradle
+│   │   ├── 8.10.2
+│   │   ├── buildOutputCleanup
+│   │   ├── file-system.probe
+│   │   ├── kotlin
+│   │   ├── noVersion
+│   │   └── vcs-1
+│   ├── app
+│   │   ├── build.gradle.kts
+│   │   └── src
+│   ├── build.gradle.kts
+│   ├── gradle
+│   │   └── wrapper
+│   ├── gradle.properties
+│   ├── gradlew
+│   ├── gradlew.bat
+│   ├── local.properties
+│   └── settings.gradle.kts
+├── assets
+│   └── icons
+│       └── storke-nobackground.png
+├── ios
+│   ├── .gitignore
+│   ├── Flutter
+│   │   ├── AppFrameworkInfo.plist
+│   │   ├── Debug.xcconfig
+│   │   ├── Generated.xcconfig
+│   │   ├── Release.xcconfig
+│   │   ├── ephemeral
+│   │   └── flutter_export_environment.sh
+│   ├── Podfile
+│   ├── Runner
+│   │   ├── AppDelegate.swift
+│   │   ├── Assets.xcassets
+│   │   ├── Base.lproj
+│   │   ├── GeneratedPluginRegistrant.h
+│   │   ├── GeneratedPluginRegistrant.m
+│   │   ├── Info.plist
+│   │   └── Runner-Bridging-Header.h
+│   ├── Runner.xcodeproj
+│   │   ├── project.pbxproj
+│   │   ├── project.xcworkspace
+│   │   └── xcshareddata
+│   ├── Runner.xcworkspace
+│   │   ├── contents.xcworkspacedata
+│   │   └── xcshareddata
+│   └── RunnerTests
+│       └── RunnerTests.swift
+├── lib
+│   ├── assets
+│   │   └── icons
+│   ├── main.dart
+│   ├── models
+│   │   └── mascot.dart
+│   ├── screens
+│   │   ├── 1_home_screen.dart
+│   │   ├── 2_location_permission_screen.dart
+│   │   ├── 3.1_catch_mascot_mapbox_screen.dart
+│   │   ├── 3_map_screen.dart
+│   │   ├── 4_verification_screen.dart
+│   │   ├── 5_mascot_screen.dart
+│   │   ├── 6_catch_screen.dart
+│   │   ├── 7_catch_result_screen.dart
+│   │   ├── 8_inventory_screen.dart
+│   │   └── NetCatchScreen.dart
+│   ├── services
+│   │   ├── bluetooth_service.dart
+│   │   ├── bluetooth_service_factory.dart
+│   │   ├── bluetooth_service_mobile.dart
+│   │   ├── bluetooth_service_web.dart
+│   │   ├── location_service.dart
+│   │   └── mascot_service.dart
+│   ├── utils
+│   │   ├── constants.dart
+│   │   └── routes.dart
+│   └── widgets
+│       ├── app_bar.dart
+│       ├── custom_button.dart
+│       └── mascot_icon.dart
+├── linux
+│   ├── .gitignore
+│   ├── CMakeLists.txt
+│   ├── flutter
+│   │   ├── CMakeLists.txt
+│   │   ├── ephemeral
+│   │   ├── generated_plugin_registrant.cc
+│   │   ├── generated_plugin_registrant.h
+│   │   └── generated_plugins.cmake
+│   └── runner
+│       ├── CMakeLists.txt
+│       ├── main.cc
+│       ├── my_application.cc
+│       └── my_application.h
+├── macos
+│   ├── .gitignore
+│   ├── Flutter
+│   │   ├── Flutter-Debug.xcconfig
+│   │   ├── Flutter-Release.xcconfig
+│   │   ├── GeneratedPluginRegistrant.swift
+│   │   └── ephemeral
+│   ├── Podfile
+│   ├── Runner
+│   │   ├── AppDelegate.swift
+│   │   ├── Assets.xcassets
+│   │   ├── Base.lproj
+│   │   ├── Configs
+│   │   ├── DebugProfile.entitlements
+│   │   ├── Info.plist
+│   │   ├── MainFlutterWindow.swift
+│   │   └── Release.entitlements
+│   ├── Runner.xcodeproj
+│   │   ├── project.pbxproj
+│   │   ├── project.xcworkspace
+│   │   └── xcshareddata
+│   ├── Runner.xcworkspace
+│   │   ├── contents.xcworkspacedata
+│   │   └── xcshareddata
+│   └── RunnerTests
+│       └── RunnerTests.swift
+├── pubspec.lock
+├── pubspec.yaml
+├── test
+│   ├── models
+│   │   └── mascot_test.dart
+│   ├── screens
+│   │   ├── 1_home_screen_test.dart
+│   │   ├── 2_location_permission_screen_test.dart
+│   │   ├── 3_map_screen_test.dart
+│   │   ├── 4_verification_screen_test.dart
+│   │   ├── 5_verification_result_screen_test.dart
+│   │   ├── 6_catch_screen_test.dart
+│   │   ├── 7_catch_result_screen_test.dart
+│   │   └── 8_inventory_screen_test.dart
+│   ├── services
+│   │   ├── bluetooth_service_test.dart
+│   │   ├── location_service_test.dart
+│   │   └── mascot_service_test.dart
+│   ├── utils
+│   │   ├── constants_test.dart
+│   │   └── routes_test.dart
+│   ├── widget_test.dart
+│   └── widgets
+│       ├── app_bar_test.dart
+│       ├── custom_button_test.dart
+│       └── mascot_icon_test.dart
+├── web
+│   ├── favicon.png
+│   ├── icons
+│   │   ├── Icon-192.png
+│   │   ├── Icon-512.png
+│   │   ├── Icon-maskable-192.png
+│   │   └── Icon-maskable-512.png
+│   ├── index.html
+│   └── manifest.json
+└── windows
+    ├── .gitignore
+    ├── CMakeLists.txt
+    ├── flutter
+    │   ├── CMakeLists.txt
+    │   ├── ephemeral
+    │   ├── generated_plugin_registrant.cc
+    │   ├── generated_plugin_registrant.h
+    │   └── generated_plugins.cmake
+    └── runner
+        ├── CMakeLists.txt
+        ├── Runner.rc
+        ├── flutter_window.cpp
+        ├── flutter_window.h
+        ├── main.cpp
+        ├── resource.h
+        ├── resources
+        ├── runner.exe.manifest
+        ├── utils.cpp
+        ├── utils.h
+        ├── win32_window.cpp
+        └── win32_window.h
+
+72 directories, 129 files
