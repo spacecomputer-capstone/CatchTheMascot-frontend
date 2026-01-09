@@ -302,13 +302,6 @@ class _MapScreenState extends State<MapScreen> {
     });
   }
 
-  @override
-  void dispose() {
-    _positionSub?.cancel();
-    _mapController?.dispose();
-    super.dispose();
-  }
-
   // UI
   @override
   Widget build(BuildContext context) {
