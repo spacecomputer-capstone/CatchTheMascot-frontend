@@ -72,13 +72,6 @@ class _UserApiTestScreenState extends State<UserApiTestScreen> {
 
                     _editUserFormBox(),
 
-                    const SizedBox(height: 10),
-
-                    ElevatedButton(
-                      onPressed: () {},
-                      child: const Text('Submit'),
-                    ),
-
                     const SizedBox(height: 60),
 
                     // if (debug == true) ...[
@@ -100,7 +93,6 @@ class _UserApiTestScreenState extends State<UserApiTestScreen> {
       ),
     );
   }
-  
 
   // ----------------------------------------------------
   // REUSABLE BOX WITH USERNAME, PASSWORD, AND BUTTON
@@ -290,13 +282,293 @@ class _UserApiTestScreenState extends State<UserApiTestScreen> {
   }
 
   Widget _editUserFormBox() {
-    final caughtMascot = TextEditingController();
-    final uncaughtMascotRemove = TextEditingController();
-    final uncaughtMascotAdd = TextEditingController();
-    final visitedPi = TextEditingController();
-    final coins = TextEditingController();
+    final usernameController = TextEditingController();
+    final addCaughtMascotController = TextEditingController();
+    final removeCaughtMascotController = TextEditingController();
+    final addUncaughtMascotController = TextEditingController();
+    final removeUncaughtMascotController = TextEditingController();
+    final addPiController = TextEditingController();
+    final removePiController = TextEditingController();
+    final coinsController = TextEditingController();
 
+    String title = "Edit User";
+    String buttonText = "Update User";
 
-    return Container();
+    return Container(
+      width: 280,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.shade400),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 3, offset: Offset(0, 2)),
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(
+            title,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+
+          const SizedBox(height: 15),
+
+          TextField(
+            controller: usernameController,
+            decoration: const InputDecoration(
+              labelText: 'Username',
+              border: OutlineInputBorder(),
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          TextField(
+            controller: addCaughtMascotController,
+            decoration: const InputDecoration(
+              labelText: 'add a caught mascot (mascotId)',
+              border: OutlineInputBorder(),
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          TextField(
+            controller: removeCaughtMascotController,
+            decoration: const InputDecoration(
+              labelText: 'remove a caught mascot (mascotId)',
+              border: OutlineInputBorder(),
+            ),
+          ),
+
+          const SizedBox(height: 15),
+
+          TextField(
+            controller: addUncaughtMascotController,
+            decoration: const InputDecoration(
+              labelText: 'add an uncaught mascot (mascotId)',
+              border: OutlineInputBorder(),
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          TextField(
+            controller: removeUncaughtMascotController,
+            decoration: const InputDecoration(
+              labelText: 'remove an uncaught mascot (mascotId)',
+              border: OutlineInputBorder(),
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          TextField(
+            controller: addPiController,
+            decoration: const InputDecoration(
+              labelText: 'add a visited Pi (piId)',
+              border: OutlineInputBorder(),
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          TextField(
+            controller: removePiController,
+            decoration: const InputDecoration(
+              labelText: 'remove a visited Pi (piId)',
+              border: OutlineInputBorder(),
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          TextField(
+            controller: coinsController,
+            decoration: const InputDecoration(
+              labelText: 'add coins (int)',
+              border: OutlineInputBorder(),
+            ),
+          ),
+
+          const SizedBox(height: 18),
+
+          SizedBox(
+            width: 140,
+            child: ElevatedButton(
+              onPressed: () async {
+                // Login logic here
+                String username = usernameController.text.trim();
+                int addCaughtMascotId =
+                    int.tryParse(addCaughtMascotController.text.trim()) ?? -1;
+                int removeCaughtMascotId =
+                    int.tryParse(removeCaughtMascotController.text.trim()) ??
+                    -1;
+                int addUncaughtMascotId =
+                    int.tryParse(addUncaughtMascotController.text.trim()) ?? -1;
+                int removeUncaughtMascotId =
+                    int.tryParse(removeUncaughtMascotController.text.trim()) ??
+                    -1;
+                int addVisitedPiId =
+                    int.tryParse(addPiController.text.trim()) ?? -1;
+                int removeVisitedPiId =
+                    int.tryParse(removePiController.text.trim()) ?? -1;
+                String coinsToAddStr = coinsController.text.trim();
+                int coinsToAdd = int.tryParse(coinsToAddStr) ?? 0;
+
+                if (username.isEmpty) {
+                  // Show error message if username is empty
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter a username')),
+                  );
+                  return;
+                }
+
+                if (addCaughtMascotId != -1) {
+                  try {
+                    await updateCaughtMascot(
+                      username: username,
+                      mascotId: addCaughtMascotId,
+                      addOrRemove: true,
+                    );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Mascot added successfully!'),
+                      ),
+                    );
+                  } catch (e) {
+                    print('exception thrown: \n$e');
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  }
+                }
+
+                if (removeCaughtMascotId != -1) {
+                  try {
+                    await updateCaughtMascot(
+                      username: username,
+                      mascotId: removeCaughtMascotId,
+                      addOrRemove: false,
+                    );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Mascot removed successfully!'),
+                      ),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  }
+                }
+
+                if (addUncaughtMascotId != -1) {
+                  try {
+                    await updateUncaughtMascot(
+                      username: username,
+                      mascotId: addUncaughtMascotId,
+                      addOrRemove: true,
+                    );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Mascot added successfully!'),
+                      ),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  }
+                }
+
+                if (removeUncaughtMascotId != -1) {
+                  try {
+                    await updateUncaughtMascot(
+                      username: username,
+                      mascotId: removeUncaughtMascotId,
+                      addOrRemove: false,
+                    );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Mascot removed successfully!'),
+                      ),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  }
+                }
+
+                if (addVisitedPiId != -1) {
+                  try {
+                    await updateVisitedPi(
+                      username: username,
+                      piId: addVisitedPiId,
+                      addOrRemove: true,
+                    );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Pi added successfully!')),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  }
+                }
+
+                if (removeVisitedPiId != -1) {
+                  try {
+                    await updateVisitedPi(
+                      username: username,
+                      piId: removeVisitedPiId,
+                      addOrRemove: false,
+                    );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Pi removed successfully!')),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  }
+                }
+
+                if (coinsToAdd != 0) {
+                  try {
+                    await updateUserCoins(
+                      username: username,
+                      coinsToAdd: coinsToAdd,
+                    );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Coins updated successfully!'),
+                      ),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  }
+                }
+
+                //clear text fields
+                // usernameController.clear();
+                addCaughtMascotController.clear();
+                removeCaughtMascotController.clear();
+                addUncaughtMascotController.clear();
+                removeUncaughtMascotController.clear();
+                addPiController.clear();
+                removePiController.clear();
+                coinsController.clear();
+              },
+              child: Text(buttonText),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

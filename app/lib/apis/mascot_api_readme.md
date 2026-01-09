@@ -4,7 +4,8 @@
 - API functions: \CatchTheMascot-frontend\app\lib\apis\mascot_api.dart
     - more functions (unused): CatchTheMascot-frontend\app\lib\apis\unused_api.dart
 - Mascot class and persistent local storage definition: CatchTheMascot-frontend\app\lib\models\mascot.dart
-- testing: CatchTheMascot-frontend\app\lib\screens\99_api_test_screen.dart
+- testing: CatchTheMascot-frontend\app\lib\screens\99_mascot_api_test_screen.dart
+    - to test, set debug bool to true in CatchTheMascot-frontend\app\lib\screens\1_home_screen.dart
 
 #### Mascot Info
 - mascot has fields:
