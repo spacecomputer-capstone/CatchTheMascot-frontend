@@ -181,6 +181,30 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                       child: Text("Cancel"),
                     ),
 
+                    //delete button
+                    OutlinedButton(
+                      onPressed: () async {
+                        //validate inputs
+                        if (mascIDController.text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Please enter Mascot ID'),
+                            ),
+                          );
+                          return;
+                        }
+
+                        int mascId = int.parse(mascIDController.text.trim());
+
+                        await deleteMascot(mascId, mascots, context);
+
+                        setState(() {});
+
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Delete Mascot by ID'),
+                    ),
+
                     //add button
                     ElevatedButton(
                       onPressed: () async {
@@ -281,15 +305,6 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                         int coins = int.parse(coinsController.text.trim());
                         // print("trying to add mascot: $name, $mascID, $rarity, $piID, $respawnTime");
 
-                        // Mascot newMascot = Mascot(
-                        //   name,
-                        //   mascID,
-                        //   rarity,
-                        //   piID,
-                        //   respawnTime,
-                        //   coins,
-                        // );
-
                         //validate rarity
                         if (rarity < 0.0 || rarity > 1.0) {
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -331,61 +346,57 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                     ),
 
                     //change values button (set values from text fields to mascot with given ID)
-                    // ElevatedButton(
-                    //   onPressed: () async {
-                    //     //validate inputs
-                    //     if (mascIDController.text.isEmpty) {
-                    //       ScaffoldMessenger.of(context).showSnackBar(
-                    //         const SnackBar(
-                    //           content: Text('Please enter Mascot ID'),
-                    //         ),
-                    //       );
-                    //       return;
-                    //     }
+                    ElevatedButton(
+                      onPressed: () async {
+                        //validate inputs
+                        if (mascIDController.text.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Please enter Mascot ID'),
+                            ),
+                          );
+                          return;
+                        }
 
-                    //     int mascId = int.parse(mascIDController.text.trim());
+                        int mascId = int.parse(mascIDController.text.trim());
 
-                    //     String? name =
-                    //         nameController.text.isEmpty
-                    //             ? null
-                    //             : nameController.text.trim();
-                    //     // double? rarity =
-                    //     //     rarityController.text.isEmpty
-                    //     //         ? null
-                    //     //         : double.parse(rarityController.text.trim());
-                    //     // int? piID =
-                    //     //     piIDController.text.isEmpty
-                    //     //         ? null
-                    //     //         : int.parse(piIDController.text.trim());
-                    //     // int? respawnTime =
-                    //     //     respawnTimeController.text.isEmpty
-                    //     //         ? null
-                    //     //         : int.parse(respawnTimeController.text.trim());
-                    //     // int? coins =
-                    //     //     coinsController.text.isEmpty
-                    //     //         ? null
-                    //     //         : int.parse(coinsController.text.trim());
+                        String? name =
+                            nameController.text.isEmpty
+                                ? null
+                                : nameController.text.trim();
+                        double? rarity =
+                            rarityController.text.isEmpty
+                                ? null
+                                : double.parse(rarityController.text.trim());
+                        int? piID =
+                            piIDController.text.isEmpty
+                                ? null
+                                : int.parse(piIDController.text.trim());
+                        int? respawnTime =
+                            respawnTimeController.text.isEmpty
+                                ? null
+                                : int.parse(respawnTimeController.text.trim());
+                        int? coins =
+                            coinsController.text.isEmpty
+                                ? null
+                                : int.parse(coinsController.text.trim());
 
-                    //     //   await setMascotValues(
-                    //     //     mascID,
-                    //     //     name,
-                    //     //     rarity,
-                    //     //     piID,
-                    //     //     respawnTime,
-                    //     //     coins,
-                    //     //     context,
-                    //     //   );
+                        await setMascot(
+                          mascId,
+                          name,
+                          rarity,
+                          piID,
+                          respawnTime,
+                          coins,
+                          context,
+                        );
 
-                    //     if (name != null) {
-                    //       await setMascotName(mascId, name, context);
-                    //     }
+                        setState(() {});
 
-                    //     setState(() {});
-
-                    //     Navigator.pop(context);
-                    //   },
-                    //   child: const Text('Set mascot values'),
-                    // ),
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Set mascot values'),
+                    ),
                   ],
                 ),
           );
