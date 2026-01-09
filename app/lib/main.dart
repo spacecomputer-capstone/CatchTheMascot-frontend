@@ -1,28 +1,30 @@
-import 'package:firebase_core/firebase_core.dart'; //firebase
-import 'firebase_options.dart';
 import 'package:flutter/material.dart';
-import 'screens/3.1_mapbox_screen.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
 import 'screens/1_home_screen.dart';
 import 'screens/2_location_permission_screen.dart';
+import 'screens/3.1_mapbox_screen.dart'; // ✅ MAPBOX SCREEN
+import 'screens/5_mascot_screen.dart'; // Added by me previously, ensuring it's available if needed, though routes use string keys usually.
 import 'screens/99_mascot_api_test_screen.dart';
-import 'utils/routes.dart';
-//firebasefirestore
-import 'package:app/apis/mascot_api.dart';
-import 'package:app/models/mascot.dart';
 import 'screens/99_user_api_test_screen.dart';
 
-void main() async {
-  // Ensure Flutter widgets are initialized
+import 'utils/routes.dart';
+import 'package:app/apis/mascot_api.dart';
+import 'package:app/models/mascot.dart';
+
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
-  //load mascots from firestore and save highest mascotId locally
   List<Mascot> mascots = [];
   await getMascots(mascots);
 
-  // Then run the app
   runApp(const CatchTheMascotApp());
 }
 
@@ -33,7 +35,6 @@ class CatchTheMascotApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-
       title: 'Catch The Mascot',
       theme: ThemeData(
         primarySwatch: Colors.deepPurple,
@@ -42,9 +43,12 @@ class CatchTheMascotApp extends StatelessWidget {
       initialRoute: Routes.home,
       routes: {
         Routes.home: (context) => const HomeScreen(),
-        Routes.locationPermission:
-            (context) => const LocationPermissionScreen(),
+        Routes.locationPermission: (context) =>
+            const LocationPermissionScreen(),
+
+        // 👇 Map route now uses Mapbox screen
         Routes.map: (context) => const CatchMascotMapboxScreen(),
+
         Routes.apiTest: (context) => ApiTestScreen(),
         Routes.userApiTest: (context) => const UserApiTestScreen(),
       },
