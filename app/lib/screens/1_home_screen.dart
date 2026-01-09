@@ -4,7 +4,7 @@ import 'dart:ui';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
-  static bool debug = false;
+  static bool debug = true; //set to true to show API test button
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +85,16 @@ class HomeScreen extends StatelessWidget {
                         onPressed: () {
                           Navigator.pushNamed(context, Routes.apiTest);
                         },
-                        child: const Text('Test API'),
+                        child: const Text('Test Mascot API'),
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pushNamed(context, Routes.userApiTest);
+                        },
+                        child: const Text('Test User API'),
                       ),
 
                       const SizedBox(height: 60),

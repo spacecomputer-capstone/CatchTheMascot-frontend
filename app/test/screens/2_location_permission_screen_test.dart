@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import '../../lib/screens/2_location_permission_screen.dart';
+import 'package:app/screens/2_location_permission_screen.dart';
 
 void main() {
 testWidgets('LocationPermissionScreen renders correctly',

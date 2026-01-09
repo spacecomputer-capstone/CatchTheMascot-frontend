@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import '../../lib/screens/3_map_screen.dart';
+import 'package:app/screens/3_map_screen.dart';
 
 void main() {
   /// ------------------------------------------------------------

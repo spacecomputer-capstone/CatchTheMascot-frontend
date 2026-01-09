@@ -8,6 +8,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 // import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:developer' as developer;
+// import 'package:app/apis/api_helpers.dart';
 
 // Create a new Mascot with auto-incremented mascotId
 // assumes that inputs are all validated
@@ -43,7 +44,7 @@ addMascot(Mascot mascot, BuildContext context, List<Mascot>? mascots) async {
     //   print("map = $data");
 
     // Use REST API instead of SDK write to bypass web SDK hang issue
-    await _writeViaRestApi(docName, data);
+    await _writeMascotViaRestApi(docName, data);
 
     //add mascot to the local list
     if (mascots != null) {
@@ -86,7 +87,10 @@ addMascot(Mascot mascot, BuildContext context, List<Mascot>? mascots) async {
 }
 
 // REST API helper to bypass web SDK write hang
-Future<void> _writeViaRestApi(String docId, Map<String, dynamic> data) async {
+Future<void> _writeMascotViaRestApi(
+  String docId,
+  Map<String, dynamic> data,
+) async {
   final projectId = FirebaseFirestore.instance.app.options.projectId;
   final url =
       'https://firestore.googleapis.com/v1/projects/$projectId/databases/mascot-database/documents/mascots/$docId';
@@ -198,7 +202,7 @@ Future<void> getMascots(List<Mascot> mascots) async {
       }
     }
     final mascotStorageService = MascotStorageService();
-    await mascotStorageService.updateHighestMascotId(maxId);
+    await mascotStorageService.saveHighestMascotId(maxId);
   } catch (e) {
     print('Failed to fetch mascots: $e');
   }
@@ -305,45 +309,137 @@ Future<Mascot?> getMascot(int mascotId, [BuildContext? context]) async {
 //mascot setters -----------------------------------------------
 
 //set mascot values by mascotId
-// Future<void> setMascot(
-//   int mascotId,
-//   String newName, [
-//   BuildContext? context,
-// ]) async {
-//   String docName = "mascot_$mascotId";
+//inputs: all fields to be updated, input as null if no change
+Future<void> setMascot(
+  int mascotId,
+  String? newName,
+  double? newRarity,
+  int? newPiId,
+  int? newRespawnTime,
+  int? newCoins, [
+  BuildContext? context,
+]) async {
+  String docName = "mascot_$mascotId";
 
-//   //get previous mascot to check existence and get previous values
-//   Mascot? mascot = await getMascot(mascotId, context); //check that mascot exists
-//   if (mascot == null) {return;} // Mascot not found, exit
+  //get previous mascot to check existence and get previous values
+  Mascot? mascot = await getMascot(
+    mascotId,
+    context,
+  ); //check that mascot exists
+  if (mascot == null) {
+    return;
+  } // Mascot not found, exit
+  else {
+    // don't update null fields
+    //this means if newName is null, assign mascot.mascotName to newName
+    newName ??= mascot.mascotName;
+    newRarity ??= mascot.rarity;
+    newPiId ??= mascot.piId;
+    newRespawnTime ??= mascot.respawnTime;
+    newCoins ??= mascot.coins;
+  }
 
+  //vaidate rarity
+  if (newRarity < 0.0 || newRarity > 1.0) {
+    if (context != null && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Rarity must be between 0.0 and 1.0')),
+      );
+    }
+    return;
+  }
 
-//   try {
-//     var data = {'mascotName': newName, };
+  try {
+    var data = {
+      'mascotId': mascotId,
+      'mascotName': newName,
+      'rarity': newRarity,
+      'piId': newPiId,
+      'respawnTime': newRespawnTime,
+      'coins': newCoins,
+    };
 
-//     // Use REST API instead of SDK write to bypass web SDK hang issue
-//     await _writeViaRestApi(docName, data);
+    // Use REST API instead of SDK write to bypass web SDK hang issue
+    await _writeMascotViaRestApi(docName, data);
 
-//     //success message
-//     if (context != null && context.mounted) {
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         SnackBar(
-//           content: Text('Mascot name updated for ID $mascotId to $newName'),
-//         ),
-//       );
-//     }
-//     print("Mascot name updated for ID $mascotId to $newName");
-//   } catch (e, s) {
-//     developer.log(
-//       "Failed to update mascot name",
-//       error: e,
-//       stackTrace: s as StackTrace?,
-//     );
-//     if (e is FirebaseException) {
-//       developer.log(
-//         'FirebaseException code=${e.code}, message=${e.message}',
-//         error: e,
-//       );
-//     }
-//   }
-// }
+    //success message
+    if (context != null && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Mascot ID $mascotId updated successfully')),
+      );
+    }
+  } catch (e, s) {
+    //snackbar error message
+    if (context != null && context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to update mascot: $e')));
+    }
+    developer.log(
+      "Failed to update mascot",
+      error: e,
+      stackTrace: s as StackTrace?,
+    );
+    if (e is FirebaseException) {
+      developer.log(
+        'FirebaseException code=${e.code}, message=${e.message}',
+        error: e,
+      );
+    }
+  }
+}
 
+//delete mascot by mascotId
+Future<void> deleteMascot(
+  int mascotId,
+  List<Mascot>? mascots, [
+  BuildContext? context,
+]) async {
+  if (mascotId < 0) {
+    if (context != null && context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Invalid mascot ID')));
+    }
+    return;
+  }
+  String docName = "mascot_$mascotId";
+
+  try {
+    // Use REST API instead of SDK write to bypass web SDK hang issue
+    final projectId = FirebaseFirestore.instance.app.options.projectId;
+    final apiKey = FirebaseFirestore.instance.app.options.apiKey;
+    final url =
+        'https://firestore.googleapis.com/v1/projects/$projectId/databases/mascot-database/documents/mascots/$docName?key=$apiKey';
+
+    final response = await http
+        .delete(Uri.parse(url), headers: {'Content-Type': 'application/json'})
+        .timeout(const Duration(seconds: 10));
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'REST API delete failed: ${response.statusCode} ${response.body}',
+      );
+    }
+
+    //success message
+    if (context != null && context.mounted) {
+      //remove mascot from local list
+      mascots?.removeWhere((mascot) => mascot.mascotId == mascotId);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Mascot ID $mascotId is no longer in the database'),
+        ),
+      );
+    }
+  } catch (e) {
+    //snackbar error message
+    if (context != null && context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to delete mascot: $e')));
+    }
+    print('Failed to delete mascot: $e');
+  }
+}

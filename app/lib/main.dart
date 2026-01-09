@@ -15,11 +15,12 @@ import 'screens/3_map_screen.dart';
 // import 'screens/6_catch_screen.dart';
 // import 'screens/7_catch_result_screen.dart';
 // import 'screens/8_inventory_screen.dart';
-import 'screens/99_api_test_screen.dart';
+import 'screens/99_mascot_api_test_screen.dart';
 import 'utils/routes.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; //firebasefirestore
+//firebasefirestore
 import 'package:app/apis/mascot_api.dart';
 import 'package:app/models/mascot.dart';
+import 'screens/99_user_api_test_screen.dart';
 
 // void main() => runApp(const CatchTheMascotApp());
 
@@ -62,6 +63,7 @@ class CatchTheMascotApp extends StatelessWidget {
         // Routes.catchResult: (context) => const CatchResultScreen(),
         // Routes.inventory: (context) => const InventoryScreen(),
         Routes.apiTest: (context) => ApiTestScreen(),
+        Routes.userApiTest: (context) => const UserApiTestScreen(),
       },
     );
   }
