@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:app/utils/routes.dart';
+import 'package:app/state/current_user.dart';
 
 class LocationPermissionScreen extends StatelessWidget {
   const LocationPermissionScreen({super.key});
@@ -46,6 +47,16 @@ class LocationPermissionScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            if (CurrentUser.isLoggedIn) ...[
+              Text(
+                'Welcome, ${CurrentUser.user!.username} 👋',
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             const Text(
               'Catch the Mascot needs your location to play.',
               textAlign: TextAlign.center,
