@@ -73,6 +73,274 @@ Future<bool> checkUserExists(String username) async {
   }
 }
 
+//check that username and password match
+Future<bool> loginUser(
+  String username,
+  String password,
+  BuildContext context,
+) async {
+  try {
+    if (username.isEmpty || password.isEmpty) {
+      throw Exception('Username and password cannot be empty');
+    }
+    User? user = await fetchUserByUsername(username);
+    if (user != null && user.password == password) {
+      return true; //login successful
+    } else {
+      return false; //login failed
+    }
+    
+  } catch (e) {
+    // Show error message
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Error during login: $e')));
+    return false;
+  }
+}
+
+// fetch user by username
+Future<User?> fetchUserByUsername(String username) async {
+  final projectId = FirebaseFirestore.instance.app.options.projectId;
+  final url =
+      'https://firestore.googleapis.com/v1/projects/$projectId/databases/mascot-database/documents/users/$username';
+
+  // Get the API key from Firebase config
+  final apiKey = FirebaseFirestore.instance.app.options.apiKey;
+
+  final response = await http
+      .get(
+        Uri.parse('$url?key=$apiKey'),
+        headers: {'Content-Type': 'application/json'},
+      )
+      .timeout(const Duration(seconds: 15));
+
+  if (response.statusCode == 200) {
+    final userData = jsonDecode(response.body) as Map<String, dynamic>;
+    final fields = userData['fields'] as Map<String, dynamic>;
+
+    return User(
+      _getStringValue(fields, 'username', ''),
+      _getStringValue(fields, 'password', ''),
+      List<String>.from(
+          (fields['caughtMascots']?['arrayValue']?['values'] ?? [])
+              .map((item) => item['stringValue'])),
+      List<String>.from(
+          (fields['uncaughtMascots']?['arrayValue']?['values'] ?? [])
+              .map((item) => item['stringValue'])),
+      List<int>.from(
+          (fields['visitedPis']?['arrayValue']?['values'] ?? [])
+              .map((item) => int.parse(item['integerValue']))),
+      _getIntValue(fields, 'coins', 0),
+    );
+  } else if (response.statusCode == 404) {
+    return null; // User not found
+  } else {
+    throw Exception(
+      'Error fetching user: ${response.statusCode} ${response.body}',
+    );
+  }
+}
+
+//add to caught mascots
+Future<void> addCaughtMascot(
+  String username,
+  String mascotId,
+) async {
+  // Fetch existing user data
+  final projectId = FirebaseFirestore.instance.app.options.projectId;
+  final url =
+      'https://firestore.googleapis.com/v1/projects/$projectId/databases/mascot-database/documents/users/$username';
+
+  // Get the API key from Firebase config
+  final apiKey = FirebaseFirestore.instance.app.options.apiKey;
+
+  final getResponse = await http
+      .get(
+        Uri.parse('$url?key=$apiKey'),
+        headers: {'Content-Type': 'application/json'},
+      )
+      .timeout(const Duration(seconds: 15));
+
+  if (getResponse.statusCode != 200) {
+    throw Exception(
+      'Error fetching user data: ${getResponse.statusCode} ${getResponse.body}',
+    );
+  }
+
+  final userData = jsonDecode(getResponse.body) as Map<String, dynamic>;
+  final fields = userData['fields'] as Map<String, dynamic>;
+
+  // Update caughtMascots list
+  List<String> caughtMascots =
+      List<String>.from(fields['caughtMascots']?['arrayValue']?['values']
+              ?.map((item) => item['stringValue']) ??
+          []);
+  if (!caughtMascots.contains(mascotId)) {
+    caughtMascots.add(mascotId);
+  }
+
+  // Write updated data back to Firestore
+  await _writeUserViaRestApi(
+    username,
+    {
+      'caughtMascots': caughtMascots,
+    },
+  );
+}
+
+
+//add to uncaught mascots
+// Future<void> addUncaughtMascot(
+//   String username,
+//   String mascotId,
+// ) async {
+//   // Fetch existing user data
+//   final projectId = FirebaseFirestore.instance.app.options.projectId;
+//   final url =
+//       'https://firestore.googleapis.com/v1/projects/$projectId/databases/mascot-database/documents/users/$username';
+
+//   // Get the API key from Firebase config
+//   final apiKey = FirebaseFirestore.instance.app.options.apiKey;
+
+//   final getResponse = await http
+//       .get(
+//         Uri.parse('$url?key=$apiKey'),
+//         headers: {'Content-Type': 'application/json'},
+//       )
+//       .timeout(const Duration(seconds: 15));
+
+//   if (getResponse.statusCode != 200) {
+//     throw Exception(
+//       'Error fetching user data: ${getResponse.statusCode} ${getResponse.body}',
+//     );
+//   }
+
+//   final userData = jsonDecode(getResponse.body) as Map<String, dynamic>;
+//   final fields = userData['fields'] as Map<String, dynamic>;
+
+//   // Update uncaughtMascots list
+//   List<String> uncaughtMascots =
+//       List<String>.from(fields['uncaughtMascots']?['arrayValue']?['values']
+//               ?.map((item) => item['stringValue']) ??
+//           []);
+//   if (!uncaughtMascots.contains(mascotId)) {
+//     uncaughtMascots.add(mascotId);
+//   }
+
+//   // Write updated data back to Firestore
+//   await _writeUserViaRestApi(
+//     username,
+//     {
+//       'uncaughtMascots': uncaughtMascots,
+//     },
+//   );
+// }
+
+// //remove mascot from uncaught mascots
+// Future<void> removeUncaughtMascot(
+//   String username,
+//   String mascotId,
+// ) async {
+//   // Fetch existing user data
+//   final projectId = FirebaseFirestore.instance.app.options.projectId;
+//   final url =
+//       'https://firestore.googleapis.com/v1/projects/$projectId/databases/mascot-database/documents/users/$username';
+
+//   // Get the API key from Firebase config
+//   final apiKey = FirebaseFirestore.instance.app.options.apiKey;
+
+//   final getResponse = await http
+//       .get(
+//         Uri.parse('$url?key=$apiKey'),
+//         headers: {'Content-Type': 'application/json'},
+//       )
+//       .timeout(const Duration(seconds: 15));
+
+//   if (getResponse.statusCode != 200) {
+//     throw Exception(
+//       'Error fetching user data: ${getResponse.statusCode} ${getResponse.body}',
+//     );
+//   }
+
+//   final userData = jsonDecode(getResponse.body) as Map<String, dynamic>;
+//   final fields = userData['fields'] as Map<String, dynamic>;
+
+//   // Update uncaughtMascots list
+//   List<String> uncaughtMascots =
+//       List<String>.from(fields['uncaughtMascots']?['arrayValue']?['values']
+//               ?.map((item) => item['stringValue']) ??
+//           []);
+//   uncaughtMascots.remove(mascotId);
+
+//   // Write updated data back to Firestore
+//   await _writeUserViaRestApi(
+//     username,
+//     {
+//       'uncaughtMascots': uncaughtMascots,
+//     },
+//   );
+// }
+
+// //add to visited pis
+// Future<void> addVisitedPi(
+//   String username,
+//   int piId,
+// ) async {
+//   // Fetch existing user data
+//   final projectId = FirebaseFirestore.instance.app.options.projectId;
+//   final url =
+//       'https://firestore.googleapis.com/v1/projects/$projectId/databases/mascot-database/documents/users/$username';
+
+//   // Get the API key from Firebase config
+//   final apiKey = FirebaseFirestore.instance.app.options.apiKey;
+
+//   final getResponse = await http
+//       .get(
+//         Uri.parse('$url?key=$apiKey'),
+//         headers: {'Content-Type': 'application/json'},
+//       )
+//       .timeout(const Duration(seconds: 15));
+
+//   if (getResponse.statusCode != 200) {
+//     throw Exception(
+//       'Error fetching user data: ${getResponse.statusCode} ${getResponse.body}',
+//     );
+//   }
+
+//   final userData = jsonDecode(getResponse.body) as Map<String, dynamic>;
+//   final fields = userData['fields'] as Map<String, dynamic>;
+
+//   // Update visitedPis list
+//   List<int> visitedPis =
+//       List<int>.from(fields['visitedPis']?['arrayValue']?['values']
+//               ?.map((item) => int.parse(item['integerValue'])) ??
+//           []);
+//   if (!visitedPis.contains(piId)) {
+//     visitedPis.add(piId);
+//   }
+
+//   // Write updated data back to Firestore
+//   await _writeUserViaRestApi(
+//     username,
+//     {
+//       'visitedPis': visitedPis,
+//     },
+//   );
+// }
+
+// //change number of coins
+// Future<void> updateUserCoins(
+//   String username,
+//   int newCoinAmount,
+// ) async {
+//   await _writeUserViaRestApi(
+//     username,
+//     {
+//       'coins': newCoinAmount,
+//     },
+//   );
+// }
 
 // helpter functions ---------------------------------
 Future<void> _writeUserViaRestApi(

@@ -70,21 +70,13 @@ class _UserApiTestScreenState extends State<UserApiTestScreen> {
 
                     const SizedBox(height: 30),
 
-                    const Text(
-                      'Welcome to Catch the Mascot!',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    _editUserFormBox(),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 10),
 
                     ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, Routes.locationPermission);
-                      },
-                      child: const Text('Start Game'),
+                      onPressed: () {},
+                      child: const Text('Submit'),
                     ),
 
                     const SizedBox(height: 60),
@@ -108,6 +100,7 @@ class _UserApiTestScreenState extends State<UserApiTestScreen> {
       ),
     );
   }
+  
 
   // ----------------------------------------------------
   // REUSABLE BOX WITH USERNAME, PASSWORD, AND BUTTON
@@ -262,12 +255,48 @@ class _UserApiTestScreenState extends State<UserApiTestScreen> {
           SizedBox(
             width: 140,
             child: ElevatedButton(
-              onPressed: onPressed,
+              onPressed: () async {
+                // Login logic here
+                String username = usernameController.text.trim();
+                String password = passwordController.text.trim();
+
+                bool success = await loginUser(username, password, context);
+
+                if (success) {
+                  // Navigate to home screen or show success message
+                  //show success message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Login successful!')),
+                  );
+                } else {
+                  // Show error message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Invalid username or password'),
+                    ),
+                  );
+                }
+
+                //clear text fields
+                usernameController.clear();
+                passwordController.clear();
+              },
               child: Text(buttonText),
             ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _editUserFormBox() {
+    final caughtMascot = TextEditingController();
+    final uncaughtMascotRemove = TextEditingController();
+    final uncaughtMascotAdd = TextEditingController();
+    final visitedPi = TextEditingController();
+    final coins = TextEditingController();
+
+
+    return Container();
   }
 }
