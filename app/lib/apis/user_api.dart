@@ -8,6 +8,42 @@ import 'dart:convert';
 // import '../firebase_options.dart';
 // import 'package:firebase_core/firebase_core.dart';
 
+// REGISTER + RETURN USER
+Future<User?> addUserAndReturnUser(
+  String username,
+  String password,
+  BuildContext context,
+) async {
+  try {
+    final user = User(
+      username,
+      password,
+      [],
+      [],
+      [],
+      0,
+    );
+
+    await addUser(user, context);
+    return user;
+  } catch (e) {
+    return null;
+  }
+}
+
+// LOGIN + RETURN USER
+Future<User?> loginUserAndReturnUser(
+  String username,
+  String password,
+  BuildContext context,
+) async {
+  final success = await loginUser(username, password, context);
+  if (!success) return null;
+
+  // Fetch full user profile after successful login
+  return await fetchUserByUsername(username);
+}
+
 // add user
 Future<User> addUser(User user, BuildContext context) async {
   if (await checkUserExists(user.username)) {

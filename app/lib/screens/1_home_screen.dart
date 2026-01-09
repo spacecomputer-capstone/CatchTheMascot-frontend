@@ -1,9 +1,28 @@
 import 'package:flutter/material.dart';
 import '../utils/routes.dart';
 import 'dart:ui';
+import 'package:app/state/current_user.dart';
+import 'package:app/apis/user_api.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  bool isLoading = false;
+
+  final TextEditingController registerUsernameController =
+      TextEditingController();
+  final TextEditingController registerPasswordController =
+      TextEditingController();
+
+  final TextEditingController loginUsernameController =
+      TextEditingController();
+  final TextEditingController loginPasswordController =
+      TextEditingController();
+
   static bool debug = true; //set to true to show API test button
 
   @override
@@ -48,7 +67,31 @@ class HomeScreen extends StatelessWidget {
                     _formBox(
                       title: "Register",
                       buttonText: "Register",
-                      onPressed: () {},
+                      usernameController: registerUsernameController,
+                      passwordController: registerPasswordController,
+                      onPressed: () async {
+                        final username = registerUsernameController.text.trim();
+                        final password = registerPasswordController.text.trim();
+
+                        if (username.isEmpty || password.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Fill all fields")),
+                          );
+                          return;
+                        }
+
+                        setState(() => isLoading = true);
+                        final user =
+                            await addUserAndReturnUser(username, password, context);
+
+                        setState(() => isLoading = false);
+
+                        if (user != null) {
+                          CurrentUser.set(user);
+                          Navigator.pushReplacementNamed(
+                              context, Routes.locationPermission);
+                        }
+                      },
                     ),
 
                     const SizedBox(height: 25),
@@ -56,7 +99,29 @@ class HomeScreen extends StatelessWidget {
                     _formBox(
                       title: "Log In",
                       buttonText: "Log In",
-                      onPressed: () {},
+                      usernameController: loginUsernameController,
+                      passwordController: loginPasswordController,
+                      onPressed: () async {
+                        final username = loginUsernameController.text.trim();
+                        final password = loginPasswordController.text.trim();
+
+                        setState(() => isLoading = true);
+
+                        final user =
+                            await loginUserAndReturnUser(username, password, context);
+
+                        setState(() => isLoading = false);
+
+                        if (user != null) {
+                          CurrentUser.set(user);
+                          Navigator.pushReplacementNamed(
+                              context, Routes.locationPermission);
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Invalid credentials")),
+                          );
+                        }
+                      },
                     ),
 
                     const SizedBox(height: 30),
@@ -71,12 +136,25 @@ class HomeScreen extends StatelessWidget {
 
                     const SizedBox(height: 20),
 
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, Routes.locationPermission);
-                      },
-                      child: const Text('Start Game'),
-                    ),
+                    // ElevatedButton(
+                    //   onPressed: () {
+                    //     Navigator.pushNamed(context, Routes.locationPermission);
+                    //   },
+                    //   child: const Text('Start Game'),
+                    // ),
+
+                    if (CurrentUser.isLoggedIn)
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pushNamed(context, Routes.locationPermission);
+                        },
+                        child: const Text('Continue Game'),
+                      )
+                    else
+                      const Text(
+                        "Please log in to start",
+                        style: TextStyle(color: Colors.white),
+                      ),
 
                     const SizedBox(height: 60),
 
@@ -112,14 +190,19 @@ class HomeScreen extends StatelessWidget {
   // ----------------------------------------------------
   // REUSABLE BOX WITH USERNAME, PASSWORD, AND BUTTON
   // ----------------------------------------------------
+  // Widget _formBox({
+  //   required String title,
+  //   required String buttonText,
+  //   required VoidCallback onPressed,
+  // })
   Widget _formBox({
     required String title,
     required String buttonText,
+    required TextEditingController usernameController,
+    required TextEditingController passwordController,
     required VoidCallback onPressed,
-  }) {
-    final usernameController = TextEditingController();
-    final passwordController = TextEditingController();
-
+  })
+   {
     return Container(
       width: 280,
       padding: const EdgeInsets.all(18),
