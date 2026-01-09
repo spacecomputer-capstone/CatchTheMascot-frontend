@@ -418,15 +418,13 @@ Future<void> _writeUserViaRestApi(
 
 // Convert Dart values to Firestore REST format
 Map<String, dynamic> _dartValueToFirestoreValue(dynamic value) {
-  //TODO: if value is an array, return as arrayValue
-  // if (value is List) {
-  //   return {
-  //     'arrayValue': {
-  //       'values': value.map((item) => _dartValueToFirestoreValue(item)).toList(),
-  //     },
-  //   };
-  // }
-  if (value is String) {
+  if (value is List) {
+    return {
+      'arrayValue': {
+        'values': value.map((item) => _dartValueToFirestoreValue(item)).toList(),
+      },
+    };
+  } else if (value is String) {
     return {'stringValue': value};
   } else if (value is int) {
     return {'integerValue': value.toString()};
@@ -439,7 +437,6 @@ Map<String, dynamic> _dartValueToFirestoreValue(dynamic value) {
   } else if (value == null) {
     return {'nullValue': 'NULL_VALUE'};
   } else {
-    // Default: treat as string
     return {'stringValue': value.toString()};
   }
 }
