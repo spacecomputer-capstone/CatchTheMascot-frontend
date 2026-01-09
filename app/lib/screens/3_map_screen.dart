@@ -95,6 +95,9 @@ class _MapScreenState extends State<MapScreen> {
 
   // ---------------- LOCATION / PLAYER ----------------
 
+  /// -----------------------------------------------------------
+  /// LOAD CURRENT LOCATION AND CREATE PLAYER MARKER
+  /// -----------------------------------------------------------
   Future<void> _loadCurrentLocation() async {
     try {
       final pos = await Geolocator.getCurrentPosition();
@@ -277,6 +280,36 @@ class _MapScreenState extends State<MapScreen> {
     super.dispose();
   }
 
+  void _loadMockGauchos() {
+    final mockPositions = [
+      LatLng(34.4140, -119.8480),
+      LatLng(34.4128, -119.8472),
+      LatLng(34.4151, -119.8459),
+    ];
+
+    setState(() {
+      _gauchoMarkers = mockPositions
+          .asMap()
+          .entries
+          .map(
+            (entry) => Marker(
+              markerId: MarkerId("gaucho_${entry.key}"),
+              position: entry.value,
+              icon: _gauchoIcon!,
+            ),
+          )
+          .toSet();
+    });
+  }
+
+  @override
+  void dispose() {
+    _positionSub?.cancel();
+    _mapController?.dispose();
+    super.dispose();
+  }
+
+  // UI
   @override
   Widget build(BuildContext context) {
     if (_currentLatLng == null || _gauchoIcon == null || _playerIcon == null) {

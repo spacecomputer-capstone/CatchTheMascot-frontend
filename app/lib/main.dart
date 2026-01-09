@@ -1,9 +1,40 @@
+import 'package:firebase_core/firebase_core.dart'; //firebase
+import 'firebase_options.dart';
 import 'package:flutter/material.dart';
 
 import 'screens/3.1_mapbox_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'screens/1_home_screen.dart';
+import 'screens/2_location_permission_screen.dart';
+import 'screens/3_map_screen.dart';
+// import 'screens/4_verification_screen.dart';
+// import 'screens/5_verification_result_screen.dart';
+// import 'screens/6_catch_screen.dart';
+// import 'screens/7_catch_result_screen.dart';
+// import 'screens/8_inventory_screen.dart';
+import 'screens/99_api_test_screen.dart';
+import 'utils/routes.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; //firebasefirestore
+import 'package:app/apis/mascot_api.dart';
+import 'package:app/models/mascot.dart';
+
+// void main() => runApp(const CatchTheMascotApp());
+
+void main() async {
+  // Ensure Flutter widgets are initialized
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  //load mascots from firestore and save highest mascotId locally
+  List<Mascot> mascots = [];
+  await getMascots(mascots);
+
+  // Then run the app
   runApp(const CatchTheMascotApp());
 }
 
@@ -14,8 +45,24 @@ class CatchTheMascotApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      // Start directly on your Mapbox world
-      home: CatchMascotMapboxScreen(),
+
+      title: 'Catch The Mascot',
+      theme: ThemeData(
+        primarySwatch: Colors.deepPurple,
+        scaffoldBackgroundColor: Colors.white,
+      ),
+      initialRoute: Routes.home,
+      routes: {
+        Routes.home: (context) => const HomeScreen(),
+        Routes.locationPermission: (context) => const LocationPermissionScreen(),
+        Routes.map: (context) => const MapScreen(),
+        // Routes.verification: (context) => const VerificationScreen(),
+        // Routes.verificationResult: (context) => const VerificationResultScreen(),
+        // Routes.catchScreen: (context) => const CatchScreen(),
+        // Routes.catchResult: (context) => const CatchResultScreen(),
+        // Routes.inventory: (context) => const InventoryScreen(),
+        Routes.apiTest: (context) => ApiTestScreen(),
+      },
     );
   }
 }
