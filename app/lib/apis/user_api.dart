@@ -153,6 +153,11 @@ Future<void> updateCaughtMascot({
   required int mascotId,
   bool addOrRemove = true,
 }) async {
+
+  if (mascotId < 0) {
+    throw Exception('Invalid mascotId: $mascotId');
+  }
+
   // Fetch existing user data
   final projectId = FirebaseFirestore.instance.app.options.projectId;
   final url =
@@ -220,6 +225,10 @@ Future<void> updateUncaughtMascot({
   required int mascotId,
   bool addOrRemove = true,
 }) async {
+  if (mascotId < 0) {
+    throw Exception('Invalid mascotId: $mascotId');
+  }
+  
   // Fetch existing user data
   final projectId = FirebaseFirestore.instance.app.options.projectId;
   final url =
@@ -287,6 +296,9 @@ Future<void> updateVisitedPi({
   required int piId,
   bool addOrRemove = true,
 }) async {
+  if (piId < 0) {
+    throw Exception('Invalid mascotId: $piId');
+  }
   // Fetch existing user data
   final projectId = FirebaseFirestore.instance.app.options.projectId;
   final url =
