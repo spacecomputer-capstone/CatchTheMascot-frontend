@@ -11,6 +11,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:app/apis/mascot_api.dart';
 
 class ApiTestScreen extends StatefulWidget {
+  const ApiTestScreen({super.key});
+
   @override
   State<ApiTestScreen> createState() => _ApiTestScreenState();
 }
@@ -144,6 +146,8 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                         ),
                         keyboardType: TextInputType.number,
                       ),
+
+                      
                       //display the highest mascotId
                       SizedBox(height: 10),
                       FutureBuilder<int>(

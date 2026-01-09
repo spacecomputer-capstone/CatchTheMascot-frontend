@@ -8,6 +8,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 // import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:developer' as developer;
+// import 'package:app/apis/api_helpers.dart';
 
 // Create a new Mascot with auto-incremented mascotId
 // assumes that inputs are all validated
@@ -43,7 +44,7 @@ addMascot(Mascot mascot, BuildContext context, List<Mascot>? mascots) async {
     //   print("map = $data");
 
     // Use REST API instead of SDK write to bypass web SDK hang issue
-    await _writeViaRestApi(docName, data);
+    await _writeMascotViaRestApi(docName, data);
 
     //add mascot to the local list
     if (mascots != null) {
@@ -86,7 +87,10 @@ addMascot(Mascot mascot, BuildContext context, List<Mascot>? mascots) async {
 }
 
 // REST API helper to bypass web SDK write hang
-Future<void> _writeViaRestApi(String docId, Map<String, dynamic> data) async {
+Future<void> _writeMascotViaRestApi(
+  String docId,
+  Map<String, dynamic> data,
+) async {
   final projectId = FirebaseFirestore.instance.app.options.projectId;
   final url =
       'https://firestore.googleapis.com/v1/projects/$projectId/databases/mascot-database/documents/mascots/$docId';
@@ -356,7 +360,7 @@ Future<void> setMascot(
     };
 
     // Use REST API instead of SDK write to bypass web SDK hang issue
-    await _writeViaRestApi(docName, data);
+    await _writeMascotViaRestApi(docName, data);
 
     //success message
     if (context != null && context.mounted) {

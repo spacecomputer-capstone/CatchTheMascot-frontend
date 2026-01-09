@@ -85,7 +85,16 @@ class HomeScreen extends StatelessWidget {
                         onPressed: () {
                           Navigator.pushNamed(context, Routes.apiTest);
                         },
-                        child: const Text('Test API'),
+                        child: const Text('Test Mascot API'),
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pushNamed(context, Routes.userApiTest);
+                        },
+                        child: const Text('Test User API'),
                       ),
 
                       const SizedBox(height: 60),
