@@ -40,7 +40,7 @@ dependencies:
   http: ^1.2.2
   mapbox_maps_flutter: ^2.0.0
   vector_math: ^2.1.4
-  motion_sensors: ^0.1.0
+  #motion_sensors: ^0.1.0
 
 
   # The following adds the Cupertino Icons font to your application.

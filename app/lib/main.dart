@@ -14,9 +14,14 @@ import 'screens/99_user_api_test_screen.dart';
 import 'utils/routes.dart';
 import 'package:app/apis/mascot_api.dart';
 import 'package:app/models/mascot.dart';
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  MapboxOptions.setAccessToken(
+    "pk.eyJ1Ijoic2FuaWxrYXR1bGEiLCJhIjoiY21pYjRoOHZsMDVyZjJpcHFxdmg2OXVicSJ9.JBlvf3X2eEd7TA0u8K5B0Q",
+  );
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
