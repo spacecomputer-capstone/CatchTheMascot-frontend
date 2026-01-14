@@ -1,7 +1,7 @@
 import 'dart:async'; // for TimeoutException
 import 'package:flutter/material.dart';
 
-import 'NetCatchScreen.dart'; // can be removed if unused now
+import '../utils/routes.dart';
 import '../services/bluetooth_service.dart';
 import '../services/bluetooth_service_factory.dart';
 
@@ -82,16 +82,35 @@ class _MascotScreenState extends State<MascotScreen>
         return;
       }
 
-      // ✅ Presence verified — treat as mascot caught
-      setState(() {
-        _isVerifying = false;
-        _hasCaughtMascot = true;
-        _verificationStatus =
-        'Verified presence — $_mascotName caught! 🎉';
-        _coins += 3; // reward
-      });
+      // ✅ Presence verified — Go to Catch Screen!
+      if (!mounted) return;
+      
+      // Navigate to the Catch Screen and wait for result
+      final result = await Navigator.pushNamed(
+        context, 
+        Routes.catchScreen,
+        arguments: _mascotName, // pass mascot name if supported, or rely on internal default
+      );
 
-      _showCatchDialog();
+      if (!mounted) return;
+
+      if (result == true) {
+        // CAUGHT!
+        setState(() {
+          _isVerifying = false;
+          _hasCaughtMascot = true;
+          _verificationStatus = 'Verified presence — $_mascotName caught! 🎉';
+          _coins += 3; // reward
+        });
+        _showCatchDialog();
+      } else {
+        // ESCAPED!
+        setState(() {
+            _isVerifying = false;
+            _verificationStatus = '$_mascotName escaped! Better luck next time.';
+        });
+      }
+
     } on TimeoutException {
       if (!mounted) return;
       setState(() {
