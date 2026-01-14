@@ -102,7 +102,6 @@ class _MascotScreenState extends State<MascotScreen>
           _verificationStatus = 'Verified presence — $_mascotName caught! 🎉';
           _coins += 3; // reward
         });
-        _showCatchDialog();
       } else {
         // ESCAPED!
         setState(() {
@@ -140,74 +139,7 @@ class _MascotScreenState extends State<MascotScreen>
     );
   }
 
-  void _showCatchDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return Dialog(
-          backgroundColor: Colors.black.withOpacity(0.85),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Verified presence!\n$_mascotName caught!',
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  height: 120,
-                  child: ScaleTransition(
-                    scale: _pulseController,
-                    child: Hero(
-                      tag: 'mascot-$_mascotName',
-                      child: Image.asset(
-                        'assets/icons/storke-nobackground.png',
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  '+3 Campus Coins\n+1 Mascot in Collection',
-                  style: TextStyle(
-                    color: Colors.yellow,
-                    fontSize: 16,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFFC857),
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: const Text('Nice!'),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+
 
   Color _statusColor() {
     if (_isVerifying) return Colors.amber.shade300;
