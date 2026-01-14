@@ -125,8 +125,8 @@ class _MapScreenState extends State<MapScreen> {
           CameraPosition(
             target: latLng,
             zoom: 18.5,
-            tilt: 60,      // angle like Pokémon Go
-            bearing: 45,   // rotate world a bit
+            tilt: 60, // angle like Pokémon Go
+            bearing: 45, // rotate world a bit
           ),
         ),
       );
@@ -163,8 +163,9 @@ class _MapScreenState extends State<MapScreen> {
   // ---------------- ICONS ----------------
 
   Future<void> _loadGauchoIcon() async {
-    final byteData =
-    await rootBundle.load('assets/icons/storke-nobackground.png');
+    final byteData = await rootBundle.load(
+      'assets/icons/storke-nobackground.png',
+    );
 
     final codec = await ui.instantiateImageCodec(
       byteData.buffer.asUint8List(),
@@ -173,8 +174,9 @@ class _MapScreenState extends State<MapScreen> {
     );
 
     final frame = await codec.getNextFrame();
-    final resized =
-    await frame.image.toByteData(format: ui.ImageByteFormat.png);
+    final resized = await frame.image.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
 
     _gauchoIcon = BitmapDescriptor.fromBytes(resized!.buffer.asUint8List());
   }
@@ -196,17 +198,13 @@ class _MapScreenState extends State<MapScreen> {
     const size = Size(180, 180);
 
     // shadow
-    final shadowPaint = Paint()
-      ..color = Colors.black.withOpacity(0.35)
-      ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 14);
+    final shadowPaint =
+        Paint()
+          ..color = Colors.black.withOpacity(0.35)
+          ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 14);
 
     canvas.drawOval(
-      Rect.fromLTWH(
-        size.width / 2 - 30,
-        size.height - 52,
-        60,
-        22,
-      ),
+      Rect.fromLTWH(size.width / 2 - 30, size.height - 52, 60, 22),
       shadowPaint,
     );
 
@@ -219,11 +217,12 @@ class _MapScreenState extends State<MapScreen> {
 
     // arrow
     final arrowPaint = Paint()..color = Colors.blueAccent;
-    final arrowPath = Path()
-      ..moveTo(size.width / 2, 16)
-      ..lineTo(size.width / 2 - 11, 40)
-      ..lineTo(size.width / 2 + 11, 40)
-      ..close();
+    final arrowPath =
+        Path()
+          ..moveTo(size.width / 2, 16)
+          ..lineTo(size.width / 2 - 11, 40)
+          ..lineTo(size.width / 2 + 11, 40)
+          ..close();
     canvas.drawPath(arrowPath, arrowPaint);
 
     final picture = recorder.endRecording();
@@ -244,7 +243,8 @@ class _MapScreenState extends State<MapScreen> {
     final angle = random.nextDouble() * 2 * math.pi;
 
     final dLat = (meters * math.cos(angle)) / 111000.0;
-    final dLng = (meters * math.sin(angle)) /
+    final dLng =
+        (meters * math.sin(angle)) /
         (111000.0 * math.cos(_currentLatLng!.latitude * math.pi / 180));
 
     final mascotPos = LatLng(
@@ -260,11 +260,9 @@ class _MapScreenState extends State<MapScreen> {
           icon: _gauchoIcon!,
           anchor: const Offset(0.5, 0.9),
           onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => const MascotScreen(),
-              ),
-            );
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const MascotScreen()));
           },
         ),
       };
@@ -288,34 +286,33 @@ class _MapScreenState extends State<MapScreen> {
     ];
 
     setState(() {
-      _gauchoMarkers = mockPositions
-          .asMap()
-          .entries
-          .map(
-            (entry) => Marker(
-              markerId: MarkerId("gaucho_${entry.key}"),
-              position: entry.value,
-              icon: _gauchoIcon!,
-            ),
-          )
-          .toSet();
+      _gauchoMarkers =
+          mockPositions
+              .asMap()
+              .entries
+              .map(
+                (entry) => Marker(
+                  markerId: MarkerId("gaucho_${entry.key}"),
+                  position: entry.value,
+                  icon: _gauchoIcon!,
+                ),
+              )
+              .toSet();
     });
   }
 
-  @override
-  void dispose() {
-    _positionSub?.cancel();
-    _mapController?.dispose();
-    super.dispose();
-  }
+  // @override
+  // void dispose() {
+  //   _positionSub?.cancel();
+  //   _mapController?.dispose();
+  //   super.dispose();
+  // }
 
   // UI
   @override
   Widget build(BuildContext context) {
     if (_currentLatLng == null || _gauchoIcon == null || _playerIcon == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
@@ -352,8 +349,10 @@ class _MapScreenState extends State<MapScreen> {
               child: Align(
                 alignment: Alignment.topCenter,
                 child: Container(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black.withOpacity(0.35),
                     borderRadius: BorderRadius.circular(999),

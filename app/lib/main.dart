@@ -1,11 +1,7 @@
 import 'package:firebase_core/firebase_core.dart'; //firebase
 import 'firebase_options.dart';
 import 'package:flutter/material.dart';
-
 import 'screens/3.1_mapbox_screen.dart';
-
-void main() {
-  WidgetsFlutterBinding.ensureInitialized();
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'screens/1_home_screen.dart';
 import 'screens/2_location_permission_screen.dart';
@@ -44,7 +40,7 @@ class CatchTheMascotApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
 
       title: 'Catch The Mascot',
@@ -55,7 +51,8 @@ class CatchTheMascotApp extends StatelessWidget {
       initialRoute: Routes.home,
       routes: {
         Routes.home: (context) => const HomeScreen(),
-        Routes.locationPermission: (context) => const LocationPermissionScreen(),
+        Routes.locationPermission:
+            (context) => const LocationPermissionScreen(),
         Routes.map: (context) => const MapScreen(),
         // Routes.verification: (context) => const VerificationScreen(),
         // Routes.verificationResult: (context) => const VerificationResultScreen(),
@@ -68,6 +65,7 @@ class CatchTheMascotApp extends StatelessWidget {
     );
   }
 }
+
 //
 //
 // import 'package:flutter/material.dart';
