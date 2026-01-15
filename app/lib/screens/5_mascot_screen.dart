@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import '../utils/routes.dart';
 import '../services/bluetooth_service.dart';
 import '../services/bluetooth_service_factory.dart';
+import '../apis/user_api.dart';
+import '../state/current_user.dart';
 
 class MascotScreen extends StatefulWidget {
   const MascotScreen({Key? key}) : super(key: key);
@@ -100,8 +102,27 @@ class _MascotScreenState extends State<MascotScreen>
           _isVerifying = false;
           _hasCaughtMascot = true;
           _verificationStatus = 'Verified presence — $_mascotName caught! 🎉';
-          _coins += 3; // reward
+          _coins += 3; // local reward
         });
+
+        // Backend Sync
+        if (CurrentUser.isLoggedIn) {
+          final username = CurrentUser.user!.username;
+          try {
+             // 1. Add Storky (ID 1) to caught list
+             await updateCaughtMascot(username: username, mascotId: 1); 
+             // 2. Add 3 coins
+             await updateUserCoins(username: username, coinsToAdd: 3);
+             print("Backend: Persisted catch for $username");
+          } catch (e) {
+             print("Backend Error: $e");
+             if (mounted) {
+               ScaffoldMessenger.of(context).showSnackBar(
+                 SnackBar(content: Text('Saved locally, but sync failed: $e')),
+               );
+             }
+          }
+        }
       } else {
         // ESCAPED!
         setState(() {
@@ -137,6 +158,12 @@ class _MascotScreenState extends State<MascotScreen>
         behavior: SnackBarBehavior.floating,
       ),
     );
+
+    if (CurrentUser.isLoggedIn) {
+      updateUserCoins(username: CurrentUser.user!.username, coinsToAdd: 1).catchError((e) {
+         print("Failed to save coin claim: $e");
+      });
+    }
   }
 
 
