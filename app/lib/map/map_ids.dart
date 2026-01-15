@@ -8,7 +8,7 @@ class MapIds {
   static const String fixedMascotSourceId = "fixed-mascot-source-id";
 
   static const String fixedMascotImageAsset =
-      'assets/icons/storke-nobackground.png';
+      'assets/icons/storke-nobackground.glb';
 
   static const double storkeLat = 34.412640;
   static const double storkeLng = -119.848396;
