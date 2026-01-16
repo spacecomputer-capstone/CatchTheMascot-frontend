@@ -24,7 +24,8 @@ class _MascotScreenState extends State<MascotScreen>
   bool _hasCaughtMascot = false;
   bool _hasAttempted = false;
 
-  int _coins = 5; // TODO: hook this up to your actual player data.
+  int _coins = 0;
+  static const int _mascotId = 1;
 
   // Mascot meta
   static const String _mascotName = 'Storky';
@@ -43,6 +44,15 @@ class _MascotScreenState extends State<MascotScreen>
       lowerBound: 0.95,
       upperBound: 1.05,
     )..repeat(reverse: true);
+
+    if (CurrentUser.isLoggedIn && CurrentUser.user != null) {
+      _coins = CurrentUser.user!.coins;
+      // Check if this mascot is already caught (storing IDs as Strings in DB)
+      _hasCaughtMascot = CurrentUser.user!.caughtMascots.contains(_mascotId.toString());
+      if (_hasCaughtMascot) {
+        _verificationStatus = 'Verified presence — $_mascotName caught! 🎉';
+      }
+    }
   }
 
   @override
@@ -110,9 +120,13 @@ class _MascotScreenState extends State<MascotScreen>
           final username = CurrentUser.user!.username;
           try {
              // 1. Add Storky (ID 1) to caught list
-             await updateCaughtMascot(username: username, mascotId: 1); 
+             await updateCaughtMascot(username: username, mascotId: _mascotId);
+             CurrentUser.user!.caughtMascots.add(_mascotId.toString());
+
              // 2. Add 3 coins
              await updateUserCoins(username: username, coinsToAdd: 3);
+             CurrentUser.user!.coins += 3;
+             
              print("Backend: Persisted catch for $username");
           } catch (e) {
              print("Backend Error: $e");
@@ -160,7 +174,9 @@ class _MascotScreenState extends State<MascotScreen>
     );
 
     if (CurrentUser.isLoggedIn) {
-      updateUserCoins(username: CurrentUser.user!.username, coinsToAdd: 1).catchError((e) {
+      updateUserCoins(username: CurrentUser.user!.username, coinsToAdd: 1).then((_) {
+         CurrentUser.user!.coins += 1;
+      }).catchError((e) {
          print("Failed to save coin claim: $e");
       });
     }
