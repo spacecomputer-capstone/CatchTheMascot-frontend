@@ -59,6 +59,7 @@ class CatchTheMascotApp extends StatelessWidget {
         // Routes.catchScreen: (context) => const CatchScreen(),
         // Routes.catchResult: (context) => const CatchResultScreen(),
         // Routes.inventory: (context) => const InventoryScreen(),
+        // Routes.caughtMascots: (context) => const CaughtMascotsScreen(),
         Routes.apiTest: (context) => ApiTestScreen(),
         Routes.userApiTest: (context) => const UserApiTestScreen(),
       },

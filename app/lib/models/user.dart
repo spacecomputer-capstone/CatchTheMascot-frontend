@@ -2,8 +2,8 @@
 class User {
   String username;
   String password; //TODO: Hash password before storing
-  List<String> caughtMascots; //list of mascotIds as references
-  List<String> uncaughtMascots; //list of mascotIds as references
+  List<int> caughtMascots; //list of mascotIds as references
+  List<int> uncaughtMascots; //list of mascotIds as references
   List<int> visitedPis; //list of piIds
   int coins; //in-game currency
 
@@ -31,8 +31,8 @@ class User {
     return User(
       map['username'],
       map['password'],
-      List<String>.from(map['caughtMascots']),
-      List<String>.from(map['uncaughtMascots']),
+      List<int>.from(map['caughtMascots']),
+      List<int>.from(map['uncaughtMascots']),
       List<int>.from(map['visitedPis']),
       map['coins'],
     );
