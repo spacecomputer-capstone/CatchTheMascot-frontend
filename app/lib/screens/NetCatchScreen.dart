@@ -12,7 +12,7 @@ class NetCatchScreen extends StatefulWidget {
     Key? key,
     this.mascotName = 'Storky',
     this.catchProbability = 0.6, // 60% base catch chance
-    this.mascotAsset = 'assets/icons/storke-nobackground.glb',
+    this.mascotAsset = 'assets/icons/storke-nobackground.png',
   }) : super(key: key);
 
   @override

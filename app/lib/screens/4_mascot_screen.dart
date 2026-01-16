@@ -213,7 +213,7 @@ class _MascotScreenState extends State<MascotScreen>
                     child: Hero(
                       tag: 'mascot-$_mascotName',
                       child: Image.asset(
-                        'assets/icons/storke-nobackground.glb',
+                        'assets/icons/storke-nobackground.png',
                         fit: BoxFit.contain,
                       ),
                     ),
@@ -481,13 +481,13 @@ class _MascotScreenState extends State<MascotScreen>
                         ? ScaleTransition(
                       scale: _pulseController,
                       child: Image.asset(
-                        'assets/icons/storke-nobackground.glb',
+                        'assets/icons/storke-nobackground.png',
                         fit: BoxFit.contain,
                         height: 140,
                       ),
                     )
                         : Image.asset(
-                      'assets/icons/storke-nobackground.glb',
+                      'assets/icons/storke-nobackground.png',
                       fit: BoxFit.contain,
                       height: 140,
                     ),
