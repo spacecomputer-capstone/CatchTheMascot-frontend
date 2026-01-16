@@ -1,9 +1,11 @@
 import 'dart:async'; // for TimeoutException
 import 'package:flutter/material.dart';
 
-import 'NetCatchScreen.dart'; // can be removed if unused now
+import '../utils/routes.dart';
 import '../services/bluetooth_service.dart';
 import '../services/bluetooth_service_factory.dart';
+import '../apis/user_api.dart';
+import '../state/current_user.dart';
 
 class MascotScreen extends StatefulWidget {
   const MascotScreen({Key? key}) : super(key: key);
@@ -22,7 +24,8 @@ class _MascotScreenState extends State<MascotScreen>
   bool _hasCaughtMascot = false;
   bool _hasAttempted = false;
 
-  int _coins = 5; // TODO: hook this up to your actual player data.
+  int _coins = 0;
+  static const int _mascotId = 1;
 
   // Mascot meta
   static const String _mascotName = 'Storky';
@@ -41,6 +44,15 @@ class _MascotScreenState extends State<MascotScreen>
       lowerBound: 0.95,
       upperBound: 1.05,
     )..repeat(reverse: true);
+
+    if (CurrentUser.isLoggedIn && CurrentUser.user != null) {
+      _coins = CurrentUser.user!.coins;
+      // Check if this mascot is already caught (storing IDs as Strings in DB)
+      _hasCaughtMascot = CurrentUser.user!.caughtMascots.contains(_mascotId.toString());
+      if (_hasCaughtMascot) {
+        _verificationStatus = 'Verified presence — $_mascotName caught! 🎉';
+      }
+    }
   }
 
   @override
@@ -82,16 +94,57 @@ class _MascotScreenState extends State<MascotScreen>
         return;
       }
 
-      // ✅ Presence verified — treat as mascot caught
-      setState(() {
-        _isVerifying = false;
-        _hasCaughtMascot = true;
-        _verificationStatus =
-        'Verified presence — $_mascotName caught! 🎉';
-        _coins += 3; // reward
-      });
+      // ✅ Presence verified — Go to Catch Screen!
+      if (!mounted) return;
+      
+      // Navigate to the Catch Screen and wait for result
+      final result = await Navigator.pushNamed(
+        context, 
+        Routes.catchScreen,
+        arguments: _mascotName, // pass mascot name if supported, or rely on internal default
+      );
 
-      _showCatchDialog();
+      if (!mounted) return;
+
+      if (result == true) {
+        // CAUGHT!
+        setState(() {
+          _isVerifying = false;
+          _hasCaughtMascot = true;
+          _verificationStatus = 'Verified presence — $_mascotName caught! 🎉';
+          _coins += 3; // local reward
+        });
+
+        // Backend Sync
+        if (CurrentUser.isLoggedIn) {
+          final username = CurrentUser.user!.username;
+          try {
+             // 1. Add Storky (ID 1) to caught list
+             await updateCaughtMascot(username: username, mascotId: _mascotId);
+             CurrentUser.user!.caughtMascots.add(_mascotId.toString());
+
+             // 2. Add 3 coins
+             await updateUserCoins(username: username, coinsToAdd: 3);
+             CurrentUser.user!.coins += 3;
+             
+             print("Backend: Persisted catch for $username");
+          } catch (e) {
+             print("Backend Error: $e");
+             if (mounted) {
+               ScaffoldMessenger.of(context).showSnackBar(
+                 SnackBar(content: Text('Saved locally, but sync failed: $e')),
+               );
+             }
+          }
+        }
+      } else {
+        // ESCAPED!
+        setState(() {
+            _isVerifying = false;
+            _verificationStatus = '$_mascotName escaped! Better luck next time.';
+        });
+      }
+
     } on TimeoutException {
       if (!mounted) return;
       setState(() {
@@ -119,76 +172,17 @@ class _MascotScreenState extends State<MascotScreen>
         behavior: SnackBarBehavior.floating,
       ),
     );
+
+    if (CurrentUser.isLoggedIn) {
+      updateUserCoins(username: CurrentUser.user!.username, coinsToAdd: 1).then((_) {
+         CurrentUser.user!.coins += 1;
+      }).catchError((e) {
+         print("Failed to save coin claim: $e");
+      });
+    }
   }
 
-  void _showCatchDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return Dialog(
-          backgroundColor: Colors.black.withOpacity(0.85),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Verified presence!\n$_mascotName caught!',
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  height: 120,
-                  child: ScaleTransition(
-                    scale: _pulseController,
-                    child: Hero(
-                      tag: 'mascot-$_mascotName',
-                      child: Image.asset(
-                        'assets/icons/storke-nobackground.png',
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  '+3 Campus Coins\n+1 Mascot in Collection',
-                  style: TextStyle(
-                    color: Colors.yellow,
-                    fontSize: 16,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFFC857),
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: const Text('Nice!'),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+
 
   Color _statusColor() {
     if (_isVerifying) return Colors.amber.shade300;
