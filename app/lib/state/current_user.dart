@@ -7,7 +7,13 @@ class CurrentUser {
   static void set(User u) {
     user = u;
   }
+
   static void clear() {
     user = null;
+  }
+
+  static String get headerUserId {
+    if (user == null) return "anonymous";
+    return user!.username;
   }
 }
