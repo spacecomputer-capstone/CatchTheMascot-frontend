@@ -18,6 +18,9 @@ void main() async {
   // Initialize Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
+  // Restore logged-in user (persistent session)
+  await CurrentUser.hydrate();
+  
   //load mascots from firestore and save highest mascotId locally
   List<Mascot> mascots = [];
   await getMascots(mascots);
