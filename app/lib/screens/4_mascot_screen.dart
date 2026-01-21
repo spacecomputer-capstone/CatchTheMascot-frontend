@@ -70,7 +70,8 @@ class _MascotScreenState extends State<MascotScreen>
 
     final client = ProofOfPresenceClient(
       baseUrl: "http://172.20.10.7:5001",
-      userId: CurrentUser.headerUserId,
+      //userId: CurrentUser.headerUserId,
+      userId: CurrentUser.user!.username,
       piId: "0000000000000001",
     );
 

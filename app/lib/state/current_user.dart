@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app/models/user.dart';
 
@@ -9,21 +8,30 @@ class CurrentUser {
   static Future<void> set(User u) async {
     user = u;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('current_user', jsonEncode(u.toJson()));
+    await prefs.setString('username', u.username);
   }
 
   static Future<void> clear() async {
     user = null;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('current_user');
+    await prefs.remove('username');
   }
 
-  /// Call this once on app startup
-  static Future<void> hydrate() async {
+  /// Minimal persistence restore (no Firestore fetch yet)
+  static Future<void> restoreIfPossible() async {
     final prefs = await SharedPreferences.getInstance();
-    final json = prefs.getString('current_user');
-    if (json != null) {
-      user = User.fromJson(jsonDecode(json));
+    final username = prefs.getString('username');
+
+    if (username != null && user == null) {
+      // Temporary placeholder user (safe for now)
+      user = User(
+        username,
+        '',
+        [],
+        [],
+        [],
+        0,
+      );
     }
   }
 }

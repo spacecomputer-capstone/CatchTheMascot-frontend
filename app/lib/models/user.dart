@@ -26,7 +26,7 @@ class User {
       'coins': user.coins,
     };
   }
-
+  
   factory User.fromMap(Map<String, dynamic> map) {
     return User(
       map['username'],
