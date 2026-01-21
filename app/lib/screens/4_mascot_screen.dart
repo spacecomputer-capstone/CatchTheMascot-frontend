@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'NetCatchScreen.dart'; // can be removed if unused now
 import '../services/bluetooth_service.dart';
 import '../services/bluetooth_service_factory.dart';
+import '../presence/proof_of_presence.dart';
+import '../state/current_user.dart';
 
 class MascotScreen extends StatefulWidget {
   const MascotScreen({Key? key}) : super(key: key);
@@ -51,6 +53,7 @@ class _MascotScreenState extends State<MascotScreen>
 
   Future<void> _challengeMascot() async {
     if (_isVerifying) return;
+
     if (_coins < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Not enough coins to challenge!')),
@@ -61,50 +64,107 @@ class _MascotScreenState extends State<MascotScreen>
     setState(() {
       _isVerifying = true;
       _hasAttempted = true;
-      _verificationStatus = 'Connecting to Storky beacon...';
-      _coins -= 2; // pay to challenge
+      _verificationStatus = 'Starting Proof of Presence…';
+      _coins -= 2;
     });
 
-    try {
-      // 10s timeout for BLE + backend verification
-      final bool verified = await _bluetoothService
-          .verifyPresence(context)
-          .timeout(const Duration(seconds: 10));
+    final client = ProofOfPresenceClient(
+      baseUrl: "http://172.20.10.7:5001",
+      userId: CurrentUser.headerUserId,
+      piId: "0000000000000001",
+    );
 
+    if (!mounted) return;
+
+    // Show live logs while PoP runs
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.black,
+      builder: (ctx) {
+        return SafeArea(
+          child: SizedBox(
+            height: MediaQuery.of(ctx).size.height * 0.75,
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          "PoP Live Logs",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        icon: const Icon(Icons.close, color: Colors.white70),
+                      )
+                    ],
+                  ),
+                ),
+                const Divider(height: 1, color: Colors.white24),
+                Expanded(
+                  child: ValueListenableBuilder<List<String>>(
+                    valueListenable: client.logList,
+                    builder: (_, logs, __) {
+                      return ListView.builder(
+                        padding: const EdgeInsets.all(12),
+                        itemCount: logs.length,
+                        itemBuilder: (_, i) => Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            logs[i],
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontFamily: "monospace",
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    try {
+      final out = await client.run();
       if (!mounted) return;
 
-      if (!verified) {
+      final resultJson = out["result"] as Map<String, dynamic>?;
+
+      if (resultJson?["ok"] == true) {
+        setState(() {
+          _isVerifying = false;
+          _hasCaughtMascot = true;
+          _verificationStatus = 'Verified presence — $_mascotName caught! 🎉';
+          _coins += 3;
+        });
+
+        _showCatchDialog();
+      } else {
         setState(() {
           _isVerifying = false;
           _verificationStatus =
-          'Verification failed.\nMake sure you\'re near the Storky beacon and try again.';
+          'PoP failed: ${resultJson?["error"] ?? "unknown error"}';
         });
-        return;
       }
-
-      // ✅ Presence verified — treat as mascot caught
-      setState(() {
-        _isVerifying = false;
-        _hasCaughtMascot = true;
-        _verificationStatus =
-        'Verified presence — $_mascotName caught! 🎉';
-        _coins += 3; // reward
-      });
-
-      _showCatchDialog();
-    } on TimeoutException {
-      if (!mounted) return;
-      setState(() {
-        _isVerifying = false;
-        _verificationStatus =
-        'Verification timed out after 10 seconds.\nMake sure you\'re near the Storky beacon and try again.';
-      });
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _isVerifying = false;
-        _verificationStatus =
-        'An error occurred during verification: $e';
+        _verificationStatus = 'PoP error: $e';
       });
     }
   }
