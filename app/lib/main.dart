@@ -10,7 +10,7 @@ import 'screens/3_map_screen.dart';
 // import 'screens/5_verification_result_screen.dart';
 // import 'screens/6_catch_screen.dart';
 // import 'screens/7_catch_result_screen.dart';
-// import 'screens/8_inventory_screen.dart';
+import 'screens/8_inventory_screen.dart';
 import 'screens/99_mascot_api_test_screen.dart';
 import 'utils/routes.dart';
 //firebasefirestore
@@ -58,7 +58,7 @@ class CatchTheMascotApp extends StatelessWidget {
         // Routes.verificationResult: (context) => const VerificationResultScreen(),
         // Routes.catchScreen: (context) => const CatchScreen(),
         // Routes.catchResult: (context) => const CatchResultScreen(),
-        // Routes.inventory: (context) => const InventoryScreen(),
+        Routes.inventory: (context) => const InventoryScreen(),
         // Routes.caughtMascots: (context) => const CaughtMascotsScreen(),
         Routes.apiTest: (context) => ApiTestScreen(),
         Routes.userApiTest: (context) => const UserApiTestScreen(),
