@@ -39,7 +39,7 @@ dependencies:
   http: ^1.2.1
   mapbox_maps_flutter: ^2.0.0
   vector_math: ^2.1.4
-  motion_sensors: ^0.1.0
+  flutter_compass: ^0.8.0
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -76,6 +76,7 @@ flutter:
   #   - images/a_dot_ham.jpeg
   assets:
     - lib/assets/icons/storke.png
+    - lib/assets/icons/player.png
     - assets/icons/
     - assets/player/player.glb
 

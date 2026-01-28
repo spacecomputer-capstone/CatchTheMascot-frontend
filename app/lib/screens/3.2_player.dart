@@ -8,7 +8,7 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:http/http.dart' as http;
-import 'package:motion_sensors/motion_sensors.dart' as motion;
+import 'package:flutter_compass/flutter_compass.dart';
 
 /// Encapsulates:
 /// - location permission + tracking
@@ -34,7 +34,7 @@ class Player {
   final List<geo.Position> _locationHistory = [];
 
   StreamSubscription<geo.Position>? _posSub;
-  StreamSubscription<motion.AbsoluteOrientationEvent>? _orientationSub;
+  StreamSubscription<CompassEvent>? _orientationSub;
 
   /// Call once from initState in your widget.
   Future<void> init() async {
@@ -152,21 +152,17 @@ class Player {
 
   // ---------------- ORIENTATION (GYRO – heading only) ----------------
 
+  // ---------------- ORIENTATION (GYRO – heading only) ----------------
+
   void _initOrientation() {
-    // ~80ms update interval (microseconds)
-    motion.motionSensors.absoluteOrientationUpdateInterval = 80000;
-
-    _orientationSub =
-        motion.motionSensors.absoluteOrientation.listen((event) {
-          // yaw in radians → degrees
-          final yawDeg = event.yaw * 180.0 / math.pi;
-
-          // Invert yaw so turning phone right rotates camera bearing right.
-          // If it feels backwards on device, change to (yawDeg + 360) % 360.
-          final bearing = (-yawDeg + 360.0) % 360.0;
-
-          onHeading(bearing);
-        });
+    _orientationSub = FlutterCompass.events?.listen((event) {
+      final heading = event.heading;
+      if (heading != null) {
+        // bearing is 0-360, handled by mapbox usually
+        // Adjust if needed, but FlutterCompass generally gives direct heading.
+        onHeading(heading);
+      }
+    });
   }
 
   // ---------------- DISPOSE ----------------
