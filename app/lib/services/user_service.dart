@@ -1,7 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 class UserService {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseFirestore _db = FirebaseFirestore.instanceFor(app: Firebase.app(), databaseId: 'mascot-database');
 
   /// Adds a mascotId to the user's caughtMascots array in Firestore.
   Future<void> addCaughtMascot(String userId, int mascotId) async {
