@@ -7,12 +7,16 @@ class NetCatchScreen extends StatefulWidget {
   final String mascotName;
   final double catchProbability; // 0.0–1.0
   final String mascotAsset;
-
+  final String rarity; // accepting string for now based on error log, or double? 
+  // Error log said: "rarity: _mascotTier" which is a String.
+  // I should accept String to match what's passed, or ignore it.
+  
   const NetCatchScreen({
     Key? key,
     this.mascotName = 'Storky',
-    this.catchProbability = 0.6, // 60% base catch chance
+    this.catchProbability = 0.6, 
     this.mascotAsset = 'assets/icons/storke-nobackground.png',
+    this.rarity = 'Common', // default
   }) : super(key: key);
 
   @override

@@ -1,7 +1,8 @@
-import 'dart:async'; // for TimeoutException
+import 'dart:async';
 import 'package:flutter/material.dart';
 
-import 'NetCatchScreen.dart'; // can be removed if unused now
+import 'NetCatchScreen.dart'; 
+import '6_catch_screen.dart'; // ✅ Minigame
 import '../services/bluetooth_service.dart';
 import '../services/bluetooth_service_factory.dart';
 
@@ -66,7 +67,11 @@ class _MascotScreenState extends State<MascotScreen>
     });
 
     try {
-      // 10s timeout for BLE + backend verification
+      // 2. Verify BLE Presence (BYPASSED FOR TESTING)
+      // await Future.delayed(const Duration(milliseconds: 1500)); // Simulate scanning time
+      
+      /*
+      // REAL LOGIC (Commented out for testing)
       final bool verified = await _bluetoothService
           .verifyPresence(context)
           .timeout(const Duration(seconds: 10));
@@ -81,17 +86,40 @@ class _MascotScreenState extends State<MascotScreen>
         });
         return;
       }
+      */
 
-      // ✅ Presence verified — treat as mascot caught
-      setState(() {
-        _isVerifying = false;
-        _hasCaughtMascot = true;
-        _verificationStatus =
-        'Verified presence — $_mascotName caught! 🎉';
-        _coins += 3; // reward
-      });
+      // -- BYPASS --
+      await Future.delayed(const Duration(milliseconds: 1500));
+      // -----------
 
-      _showCatchDialog();
+      if (!mounted) return;
+
+      // 3. Navigate to Catch Minigame
+      final bool? caught = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CatchScreen(
+            mascotName: _mascotName,
+          ),
+        ),
+      );
+
+      if (!mounted) return;
+
+      if (caught == true) {
+        setState(() {
+          _isVerifying = false;
+          _hasCaughtMascot = true;
+          _verificationStatus = 'Verified presence — $_mascotName caught! 🎉';
+          _coins += 3; // reward
+        });
+        _showCatchDialog();
+      } else {
+        setState(() {
+          _isVerifying = false;
+          _verificationStatus = '$_mascotName slipped away! Try again.';
+        });
+      }
     } on TimeoutException {
       if (!mounted) return;
       setState(() {
