@@ -5,6 +5,9 @@ import 'NetCatchScreen.dart';
 import '6_catch_screen.dart'; // ✅ Minigame
 import '../services/bluetooth_service.dart';
 import '../services/bluetooth_service_factory.dart';
+import '../services/mascot_service.dart';
+import '../services/user_service.dart';
+import '../models/mascot.dart';
 
 class MascotScreen extends StatefulWidget {
   const MascotScreen({Key? key}) : super(key: key);
@@ -67,6 +70,37 @@ class _MascotScreenState extends State<MascotScreen>
     });
 
     try {
+      // 1. Fetch Mascot Data
+      // For now, hardcoding 'mascot_1' or 'storky'. In real app, this comes from BLE.
+      final mascotService = MascotService();
+      Mascot? mascot = await mascotService.fetchMascot('storky'); 
+
+      if (!mounted) return;
+
+      if (mascot == null) {
+         // FALLBACK FOR TESTING: Use Mock Data if backend fails
+         print("DEBUG: Backend fetch failed or returned null. Using MOCK data.");
+         
+         mascot = Mascot(
+           "storky_the_great", // name
+           11,                 // id
+           0.3,                // rarity (0.3 = Harder/Rare)
+           4,                  // piId
+           120,                // respawn
+           3,                  // coins
+         );
+         
+         print("DEBUG: Using Mock Mascot: ${mascot.mascotName}, Rarity: ${mascot.rarity}");
+      }
+      
+      // Proceed with 'mascot' (fetched or mock)
+
+      setState(() {
+         // _mascotName = mascot!.mascotName; 
+      });
+      
+      print("DEBUG: Fetched Mascot: ${mascot.mascotName}, Rarity: ${mascot.rarity}");
+
       // 2. Verify BLE Presence (BYPASSED FOR TESTING)
       // await Future.delayed(const Duration(milliseconds: 1500)); // Simulate scanning time
       
@@ -100,6 +134,7 @@ class _MascotScreenState extends State<MascotScreen>
         MaterialPageRoute(
           builder: (context) => CatchScreen(
             mascotName: _mascotName,
+            rarity: mascot!.rarity, // Passing fetched rarity
           ),
         ),
       );

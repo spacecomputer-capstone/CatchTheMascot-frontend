@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 
 class CatchScreen extends StatefulWidget {
   final String mascotName;
+  final double rarity; // 0.0 (legendary/rare) to 1.0 (common)
 
   const CatchScreen({
     Key? key,
     this.mascotName = 'Storky',
+    this.rarity = 1.0, 
   }) : super(key: key);
 
   @override
@@ -21,16 +23,36 @@ class _CatchScreenState extends State<CatchScreen>
   bool? _success;
 
   // Normalized positions (0–1) where the zone is considered a “catch”.
-  // Middle 30% of the bar.
-  static const double _zoneStart = 0.35;
-  static const double _zoneEnd = 0.65;
+  late double _zoneStart;
+  late double _zoneEnd;
 
   @override
   void initState() {
     super.initState();
+    
+    // Difficulty logic: 
+    // Rarity 0.1 (Rare) -> Harder
+    // Rarity 1.0 (Common) -> Easier
+
+    // Zone Width Config
+    // Base 12% (0.12) + (18% * rarity)
+    // Rarity 0.1 -> 0.138 (13.8%)
+    // Rarity 1.0 -> 0.30 (30%)
+    double zoneWidth = 0.12 + (0.18 * widget.rarity);
+    
+    double center = 0.5;
+    _zoneStart = center - (zoneWidth / 2);
+    _zoneEnd = center + (zoneWidth / 2);
+
+    // Speed Config
+    // Base 800ms + (800ms * rarity)
+    // Rarity 0.1 -> 880ms (Fast)
+    // Rarity 1.0 -> 1600ms (Slow/Normal)
+    int durationMs = (800 + (800 * widget.rarity)).toInt();
+
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1600),
+      duration: Duration(milliseconds: durationMs),
     )..repeat(reverse: true);
 
     _position = CurvedAnimation(
