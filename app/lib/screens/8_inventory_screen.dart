@@ -296,7 +296,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("$username's Pokédex"),
+        title: Text("${username[0].toUpperCase()}${username.substring(1)}'s Mascotarium"),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
