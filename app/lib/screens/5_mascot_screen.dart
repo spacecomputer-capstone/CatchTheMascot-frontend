@@ -6,7 +6,7 @@ import '../services/bluetooth_service.dart';
 import '../services/bluetooth_service_factory.dart';
 
 class MascotScreen extends StatefulWidget {
-  const MascotScreen({Key? key}) : super(key: key);
+  const MascotScreen({super.key});
 
   @override
   State<MascotScreen> createState() => _MascotScreenState();

@@ -2,10 +2,7 @@
 
 import 'package:app/models/mascot.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 // import '../utils/routes.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 // import '../firebase_options.dart';
 // import 'package:firebase_core/firebase_core.dart';
 import 'package:app/apis/mascot_api.dart';

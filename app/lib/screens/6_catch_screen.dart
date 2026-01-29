@@ -4,9 +4,9 @@ class CatchScreen extends StatefulWidget {
   final String mascotName;
 
   const CatchScreen({
-    Key? key,
+    super.key,
     this.mascotName = 'Storky',
-  }) : super(key: key);
+  });
 
   @override
   State<CatchScreen> createState() => _CatchScreenState();

@@ -1,8 +1,6 @@
 import 'package:firebase_core/firebase_core.dart'; //firebase
 import 'firebase_options.dart';
 import 'package:flutter/material.dart';
-import 'screens/3.1_mapbox_screen.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'screens/1_home_screen.dart';
 import 'screens/2_location_permission_screen.dart';
 import 'screens/3_map_screen.dart';
