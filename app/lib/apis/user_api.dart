@@ -15,14 +15,7 @@ Future<User?> addUserAndReturnUser(
   BuildContext context,
 ) async {
   try {
-    final user = User(
-      username,
-      password,
-      [],
-      [],
-      [],
-      0,
-    );
+    final user = User(username, password, [], [], [], 0);
 
     await addUser(user, context);
     return user;
@@ -156,14 +149,14 @@ Future<User?> fetchUserByUsername(String username) async {
     return User(
       _getStringValue(fields, 'username', ''),
       _getStringValue(fields, 'password', ''),
-      List<String>.from(
+      List<int>.from(
         (fields['caughtMascots']?['arrayValue']?['values'] ?? []).map(
-          (item) => item['stringValue'],
+          (item) => int.parse(item['integerValue']),
         ),
       ),
-      List<String>.from(
+      List<int>.from(
         (fields['uncaughtMascots']?['arrayValue']?['values'] ?? []).map(
-          (item) => item['stringValue'],
+          (item) => int.parse(item['integerValue']),
         ),
       ),
       List<int>.from(
@@ -189,7 +182,6 @@ Future<void> updateCaughtMascot({
   required int mascotId,
   bool addOrRemove = true,
 }) async {
-
   if (mascotId < 0) {
     throw Exception('Invalid mascotId: $mascotId');
   }
@@ -264,7 +256,7 @@ Future<void> updateUncaughtMascot({
   if (mascotId < 0) {
     throw Exception('Invalid mascotId: $mascotId');
   }
-  
+
   // Fetch existing user data
   final projectId = FirebaseFirestore.instance.app.options.projectId;
   final url =
@@ -456,6 +448,16 @@ Future<void> updateUserCoins({
   };
 
   await _writeUserViaRestApi(username, updatedData);
+}
+
+//get the caught mascots of a user
+Future<List<int>> getCaughtMascotsOfUser(String username) async {
+  final user = await fetchUserByUsername(username);
+  if (user != null) {
+    return user.caughtMascots;
+  } else {
+    throw Exception('User $username not found');
+  }
 }
 
 // helpter functions ---------------------------------

@@ -8,7 +8,7 @@ import '../presence/proof_of_presence.dart';
 import '../state/current_user.dart';
 
 class MascotScreen extends StatefulWidget {
-  const MascotScreen({Key? key}) : super(key: key);
+  const MascotScreen({super.key});
 
   @override
   State<MascotScreen> createState() => _MascotScreenState();

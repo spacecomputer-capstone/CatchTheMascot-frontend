@@ -235,7 +235,7 @@ class BluetoothServiceMobile implements BluetoothService {
     final device = await completer.future
         .timeout(const Duration(seconds: 11), onTimeout: () => null);
     await fb.FlutterBluePlus.stopScan();
-    await sub?.cancel();
+    await sub.cancel();
 
     if (device != null) {
       await device.connect(autoConnect: false);

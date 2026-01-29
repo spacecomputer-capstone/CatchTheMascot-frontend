@@ -306,6 +306,22 @@ Future<Mascot?> getMascot(int mascotId, [BuildContext? context]) async {
   }
 }
 
+Future<String> getMascotPath(int mascotId) async {
+  //search /lib/assets/mascotimages/ for mascot image file with mascotId as prefix before the underscore
+  String mascotImagePath = 'lib/assets/mascotimages/';
+  String prefix = '${mascotId}_';
+
+  //path = prefix + mascot.mascotName + .png (assuming all images are png files)
+  //get mascot object
+  Mascot? mascot = await getMascot(mascotId);
+  if (mascot != null) {
+    mascotImagePath += '$prefix${mascot.mascotName}.png';
+  } else {
+    mascotImagePath = '';
+  }
+  return mascotImagePath;
+}
+
 //mascot setters -----------------------------------------------
 
 //set mascot values by mascotId
