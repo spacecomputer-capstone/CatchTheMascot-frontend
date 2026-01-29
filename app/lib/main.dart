@@ -56,7 +56,6 @@ class CatchTheMascotApp extends StatelessWidget {
         Routes.home: (context) => const HomeScreen(),
         Routes.locationPermission:
             (context) => const LocationPermissionScreen(),
-<<<<<<< HEAD
         Routes.map: (context) => const MapScreen(),
         // Routes.verification: (context) => const VerificationScreen(),
         // Routes.verificationResult: (context) => const VerificationResultScreen(),
@@ -64,9 +63,7 @@ class CatchTheMascotApp extends StatelessWidget {
         // Routes.catchResult: (context) => const CatchResultScreen(),
         Routes.inventory: (context) => const InventoryScreen(),
         // Routes.caughtMascots: (context) => const CaughtMascotsScreen(),
-=======
         Routes.map: (context) => const CatchMascotMapboxScreen(),
->>>>>>> 56487425304b6eda0ba4a2b6c0c65649633504f6
         Routes.apiTest: (context) => ApiTestScreen(),
         Routes.userApiTest: (context) => const UserApiTestScreen(),
       },
