@@ -1,11 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../state/current_user.dart';
+import 'package:firebase_core/firebase_core.dart';
+
+final FirebaseFirestore _firestore = FirebaseFirestore.instanceFor(
+  app: Firebase.app(),
+  databaseId: 'mascot-database', // EXACT name from console
+);
 
 class CatchScreen extends StatefulWidget {
   final String mascotName;
+  final int mascotId;
 
   const CatchScreen({
     Key? key,
-    this.mascotName = 'Storky',
+    // required this.mascotId, (for later when we have correct spawning mechanism)
+    this.mascotId = 5, // default mascot_5 in our db for current setup
+    this.mascotName = 'storkie',
   }) : super(key: key);
 
   @override
@@ -48,14 +59,21 @@ class _CatchScreenState extends State<CatchScreen>
   void _handleCatchTap() {
     if (_hasResult) return;
 
-    final double value = _position.value;
-    final bool success = value >= _zoneStart && value <= _zoneEnd;
+    final value = _position.value;
+    final success = value >= _zoneStart && value <= _zoneEnd;
 
+    // update UI immediately
     setState(() {
       _hasResult = true;
       _success = success;
     });
+
     _controller.stop();
+
+    // backend async, don't block UI
+    if (success) {
+      _saveCatchToBackend(); // no await
+    }
 
     _showResultDialog(success);
   }
@@ -136,6 +154,19 @@ class _CatchScreenState extends State<CatchScreen>
         );
       },
     );
+  }
+
+  Future<void> _saveCatchToBackend() async {
+    final u = CurrentUser.user;
+    if (u == null) return;
+
+    await _firestore
+        .collection('users')
+        .doc(u.username)
+        .update({
+          'caughtMascots': FieldValue.arrayUnion([widget.mascotId]),
+          'coins': FieldValue.increment(1),
+        });
   }
 
   void _resetGame() {

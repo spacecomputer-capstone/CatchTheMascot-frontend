@@ -29,12 +29,12 @@ class User {
 
   factory User.fromMap(Map<String, dynamic> map) {
     return User(
-      map['username'],
-      map['password'],
-      List<String>.from(map['caughtMascots']),
-      List<String>.from(map['uncaughtMascots']),
-      List<int>.from(map['visitedPis']),
-      map['coins'],
+      map['username'] ?? '',
+      map['password'] ?? '',
+      List<String>.from(map['caughtMascots'] ?? []),
+      List<String>.from(map['uncaughtMascots'] ?? []),
+      List<int>.from(map['visitedPis'] ?? []),
+      map['coins'] ?? 0,
     );
   }
 }
