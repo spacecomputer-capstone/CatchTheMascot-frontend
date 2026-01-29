@@ -9,6 +9,9 @@ import 'screens/3_map_screen.dart';
 // import 'screens/6_catch_screen.dart';
 // import 'screens/7_catch_result_screen.dart';
 import 'screens/8_inventory_screen.dart';
+import 'screens/3.1_mapbox_screen.dart';
+import 'screens/1_home_screen.dart';
+import 'screens/2_location_permission_screen.dart';
 import 'screens/99_mascot_api_test_screen.dart';
 import 'utils/routes.dart';
 //firebasefirestore
@@ -16,8 +19,6 @@ import 'package:app/apis/mascot_api.dart';
 import 'package:app/models/mascot.dart';
 import 'screens/99_user_api_test_screen.dart';
 import 'package:app/state/current_user.dart';
-
-// void main() => runApp(const CatchTheMascotApp());
 
 void main() async {
   // Ensure Flutter widgets are initialized
@@ -55,6 +56,7 @@ class CatchTheMascotApp extends StatelessWidget {
         Routes.home: (context) => const HomeScreen(),
         Routes.locationPermission:
             (context) => const LocationPermissionScreen(),
+<<<<<<< HEAD
         Routes.map: (context) => const MapScreen(),
         // Routes.verification: (context) => const VerificationScreen(),
         // Routes.verificationResult: (context) => const VerificationResultScreen(),
@@ -62,50 +64,12 @@ class CatchTheMascotApp extends StatelessWidget {
         // Routes.catchResult: (context) => const CatchResultScreen(),
         Routes.inventory: (context) => const InventoryScreen(),
         // Routes.caughtMascots: (context) => const CaughtMascotsScreen(),
+=======
+        Routes.map: (context) => const CatchMascotMapboxScreen(),
+>>>>>>> 56487425304b6eda0ba4a2b6c0c65649633504f6
         Routes.apiTest: (context) => ApiTestScreen(),
         Routes.userApiTest: (context) => const UserApiTestScreen(),
       },
     );
   }
 }
-
-//
-//
-// import 'package:flutter/material.dart';
-// import 'screens/1_home_screen.dart';
-// import 'screens/2_location_permission_screen.dart';
-// import 'screens/3_map_screen.dart';
-// // import 'screens/4_verification_screen.dart';
-// // import 'screens/6_catch_screen.dart';
-// // import 'screens/7_catch_result_screen.dart';
-// // import 'screens/8_inventory_screen.dart';
-// import 'utils/routes.dart';
-//
-// void main() => runApp(const CatchTheMascotApp());
-//
-// class CatchTheMascotApp extends StatelessWidget {
-//   const CatchTheMascotApp({super.key});
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return MaterialApp(
-//       debugShowCheckedModeBanner: false,
-//       title: 'Catch The Mascot',
-//       theme: ThemeData(
-//         primarySwatch: Colors.deepPurple,
-//         scaffoldBackgroundColor: Colors.white,
-//       ),
-//       initialRoute: Routes.home,
-//       routes: {
-//         Routes.home: (context) => const HomeScreen(),
-//         Routes.locationPermission: (context) => const LocationPermissionScreen(),
-//         Routes.map: (context) => const MapScreen(),
-//         // Routes.verification: (context) => const VerificationScreen(),
-//         // Routes.verificationResult: (context) => const VerificationResultScreen(),
-//         // Routes.catchScreen: (context) => const CatchScreen(),
-//         // Routes.catchResult: (context) => const CatchResultScreen(),
-//         // Routes.inventory: (context) => const InventoryScreen(),
-//       },
-//     );
-//   }
-// }

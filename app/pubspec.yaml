@@ -28,6 +28,7 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  crypto: ^3.0.3
   flutter:
     sdk: flutter
   # for our location permission
@@ -36,7 +37,7 @@ dependencies:
   google_maps_flutter: ^2.6.0
   flutter_blue_plus: ^1.28.1
   flutter_web_bluetooth: ^1.1.0
-  http: ^1.2.1
+  http: ^1.2.2
   mapbox_maps_flutter: ^2.0.0
   vector_math: ^2.1.4
   motion_sensors: ^0.1.0
@@ -48,6 +49,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   cloud_firestore: ^6.1.0
   shared_preferences: ^2.5.3
+  firebase_core: ^4.3.0
 
 dev_dependencies:
   flutter_test:
