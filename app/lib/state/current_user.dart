@@ -49,4 +49,9 @@ class CurrentUser {
       user = User(username, '', [], [], [], 0);
     }
   }
+
+  static String get headerUserId {
+    if (user == null) return "anonymous";
+    return user!.username;
+  }
 }
