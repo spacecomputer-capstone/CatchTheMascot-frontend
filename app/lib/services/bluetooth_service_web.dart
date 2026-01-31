@@ -7,7 +7,7 @@ class BluetoothServiceWeb implements BluetoothService {
   static const String _serviceUuidStr = 'eb5c86a4-733c-4d9d-aab2-285c2dab09a1';
 
   @override
-  Future<void> connectToDevice(BuildContext context, String _ignored) async {
+  Future<void> connectToDevice(BuildContext context, String ignored) async {
     final isAvailable = await FlutterWebBluetooth.instance.isAvailable.first;
     if (!isAvailable) {
       if (context.mounted) {
