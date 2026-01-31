@@ -19,6 +19,7 @@ import 'package:app/apis/mascot_api.dart';
 import 'package:app/models/mascot.dart';
 import 'screens/99_user_api_test_screen.dart';
 import 'package:app/state/current_user.dart';
+import 'package:app/state/current_user.dart';
 
 void main() async {
   // Ensure Flutter widgets are initialized

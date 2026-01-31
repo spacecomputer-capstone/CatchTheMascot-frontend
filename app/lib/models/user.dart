@@ -35,6 +35,12 @@ class User {
       List<int>.from(map['uncaughtMascots'] ?? []),
       List<int>.from(map['visitedPis'] ?? []),
       (map['coins'] as int?) ?? 0,
+      map['username'] ?? '',
+      map['password'] ?? '',
+      List<String>.from(map['caughtMascots'] ?? []),
+      List<String>.from(map['uncaughtMascots'] ?? []),
+      List<int>.from(map['visitedPis'] ?? []),
+      map['coins'] ?? 0,
     );
   }
 }
