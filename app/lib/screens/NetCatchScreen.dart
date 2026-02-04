@@ -9,11 +9,11 @@ class NetCatchScreen extends StatefulWidget {
   final String mascotAsset;
 
   const NetCatchScreen({
-    Key? key,
+    super.key,
     this.mascotName = 'Storky',
     this.catchProbability = 0.6, // 60% base catch chance
     this.mascotAsset = 'assets/icons/storke-nobackground.png',
-  }) : super(key: key);
+  });
 
   @override
   State<NetCatchScreen> createState() => _NetCatchScreenState();

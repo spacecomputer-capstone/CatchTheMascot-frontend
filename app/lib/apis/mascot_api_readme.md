@@ -7,6 +7,10 @@
 - testing: CatchTheMascot-frontend\app\lib\screens\99_mascot_api_test_screen.dart
     - to test, set debug bool to true in CatchTheMascot-frontend\app\lib\screens\1_home_screen.dart
 
+- Mascot .glb's (for 3D rendering): CatchTheMascot-frontend\app\lib\assets\3dmascots
+- Mascot .png's: CatchTheMascot-frontend\app\lib\assets\mascotimages
+    - naming of .png is: <mascot_id>_<mascot_name>.png
+
 #### Mascot Info
 - mascot has fields:
   String mascotName; //common name of the mascot
