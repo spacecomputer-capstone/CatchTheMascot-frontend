@@ -7,7 +7,8 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:http/http.dart' as http;
-import 'package:motion_sensors/motion_sensors.dart' as motion;
+//import 'package:motion_sensors/motion_sensors.dart' as motion;
+import 'package:sensors_plus/sensors_plus.dart';
 
 /// Encapsulates:
 /// - location permission + tracking
@@ -33,7 +34,8 @@ class Player {
   final List<geo.Position> _locationHistory = [];
 
   StreamSubscription<geo.Position>? _posSub;
-  StreamSubscription<motion.AbsoluteOrientationEvent>? _orientationSub;
+  //StreamSubscription<motion.AbsoluteOrientationEvent>? _orientationSub;
+  StreamSubscription? _orientationSub;
 
   /// Call once from initState in your widget.
   Future<void> init() async {
@@ -151,21 +153,38 @@ class Player {
 
   // ---------------- ORIENTATION (GYRO – heading only) ----------------
 
+  // void _initOrientation() {
+  //   // ~80ms update interval (microseconds)
+  //   motion.motionSensors.absoluteOrientationUpdateInterval = 80000;
+
+  //   _orientationSub =
+  //       motion.motionSensors.absoluteOrientation.listen((event) {
+  //         // yaw in radians → degrees
+  //         final yawDeg = event.yaw * 180.0 / math.pi;
+
+  //         // Invert yaw so turning phone right rotates camera bearing right.
+  //         // If it feels backwards on device, change to (yawDeg + 360) % 360.
+  //         final bearing = (-yawDeg + 360.0) % 360.0;
+
+  //         onHeading(bearing);
+  //       });
+  // }
   void _initOrientation() {
-    // ~80ms update interval (microseconds)
-    motion.motionSensors.absoluteOrientationUpdateInterval = 80000;
+    _orientationSub = magnetometerEvents.listen((event) {
+      final x = event.x;
+      final y = event.y;
 
-    _orientationSub =
-        motion.motionSensors.absoluteOrientation.listen((event) {
-          // yaw in radians → degrees
-          final yawDeg = event.yaw * 180.0 / math.pi;
+      // heading (radians)
+      final headingRad = math.atan2(y, x);
 
-          // Invert yaw so turning phone right rotates camera bearing right.
-          // If it feels backwards on device, change to (yawDeg + 360) % 360.
-          final bearing = (-yawDeg + 360.0) % 360.0;
+      // convert → degrees
+      final yawDeg = headingRad * 180.0 / math.pi;
 
-          onHeading(bearing);
-        });
+      // match your old behavior
+      final bearing = (-yawDeg + 360.0) % 360.0;
+
+      onHeading(bearing);
+    });
   }
 
   // ---------------- DISPOSE ----------------
