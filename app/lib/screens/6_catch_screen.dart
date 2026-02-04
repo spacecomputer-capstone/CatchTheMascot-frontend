@@ -64,11 +64,10 @@ class _CatchScreenState extends State<CatchScreen>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) {
+      builder: (dialogCtx) {
         return Dialog(
           backgroundColor: Colors.black.withOpacity(0.9),
-          shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           child: Padding(
             padding: const EdgeInsets.all(20.0),
             child: Column(
@@ -108,8 +107,8 @@ class _CatchScreenState extends State<CatchScreen>
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () {
-                          Navigator.of(context).pop();
-                          Navigator.of(context).pop(false); // back to previous
+                          Navigator.of(dialogCtx).pop(); // close dialog
+                          Navigator.of(context).pop(false); // return to MascotScreen: escaped
                         },
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: Colors.white54),
@@ -122,8 +121,8 @@ class _CatchScreenState extends State<CatchScreen>
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
-                          Navigator.of(context).pop();
-                          Navigator.of(context).pop(success);
+                          Navigator.of(dialogCtx).pop(); // close dialog
+                          Navigator.of(context).pop(success); // return to MascotScreen with true/false
                         },
                         child: const Text('Continue'),
                       ),
@@ -171,8 +170,7 @@ class _CatchScreenState extends State<CatchScreen>
         ),
         child: SafeArea(
           child: Padding(
-            padding:
-            const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
             child: Column(
               children: [
                 const SizedBox(height: 24),
@@ -224,7 +222,6 @@ class _CatchScreenState extends State<CatchScreen>
           return Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Bar + zone + marker
               LayoutBuilder(
                 builder: (context, constraints) {
                   final double barWidth = constraints.maxWidth;
@@ -237,7 +234,6 @@ class _CatchScreenState extends State<CatchScreen>
                   return Stack(
                     alignment: Alignment.centerLeft,
                     children: [
-                      // Base bar
                       Container(
                         width: barWidth,
                         height: 16,
@@ -246,7 +242,6 @@ class _CatchScreenState extends State<CatchScreen>
                           borderRadius: BorderRadius.circular(999),
                         ),
                       ),
-                      // Green catch zone
                       Positioned(
                         left: zoneLeft,
                         child: Container(
@@ -258,9 +253,8 @@ class _CatchScreenState extends State<CatchScreen>
                           ),
                         ),
                       ),
-                      // Moving marker
                       Positioned(
-                        left: markerX - 8, // center the circle
+                        left: markerX - 8,
                         child: Container(
                           width: 24,
                           height: 24,
@@ -284,9 +278,7 @@ class _CatchScreenState extends State<CatchScreen>
               const SizedBox(height: 12),
               Text(
                 _hasResult
-                    ? (_success == true
-                    ? 'Great timing!'
-                    : 'Too early or too late.')
+                    ? (_success == true ? 'Great timing!' : 'Too early or too late.')
                     : 'Watch the marker...',
                 style: const TextStyle(color: Colors.white70),
               ),

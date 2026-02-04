@@ -1,4 +1,7 @@
+import 'dart:convert' as convert;
 import 'dart:typed_data';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' as mb;
@@ -7,30 +10,99 @@ class MascotAnnotations {
   MascotAnnotations({
     required this.map,
     required this.assetPath,
+    required this.glbAssetPath,
     required this.lat,
     required this.lng,
     required this.onTap,
+    required this.modelScale,
+    required this.modelHeightMeters,
+    required this.modelHeadingOffset,
   });
 
   final mb.MapboxMap map;
-  final String assetPath;
+  final String assetPath;     // png (tap hitbox)
+  final String glbAssetPath;  // glb (visible)
   final double lat;
   final double lng;
   final VoidCallback onTap;
 
+  final double modelScale;
+  final double modelHeightMeters;
+  final double modelHeadingOffset;
+
   mb.PointAnnotationManager? _mgr;
   Uint8List? _imageBytes;
+  mb.PointAnnotation? _tapPoint;
+
+  static const String _sourceId = "mascot-model-source";
+  static const String _layerId = "mascot-model-layer";
+
+  bool _modelAdded = false;
 
   Future<void> init() async {
+    // ✅ If this throws, your pubspec.yaml asset path is wrong.
+    await rootBundle.load(glbAssetPath);
+
+    await _add3dModelAtFixedLocation();
+
     _mgr = await map.annotations.createPointAnnotationManager();
     await _loadAsset();
-    await _createMarker();
+    await _createInvisibleTapHitbox();
   }
 
   Future<void> dispose() async {
-    if (_mgr != null) {
-      map.annotations.removeAnnotationManager(_mgr!);
+    try {
+      if (_mgr != null) {
+        map.annotations.removeAnnotationManager(_mgr!);
+      }
+    } catch (_) {}
+
+    try {
+      if (_modelAdded) {
+        await map.style.removeStyleLayer(_layerId);
+        await map.style.removeStyleSource(_sourceId);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _add3dModelAtFixedLocation() async {
+    final point = mb.Point(coordinates: mb.Position(lng, lat));
+    final data = convert.json.encode(point);
+
+    if (!_modelAdded) {
+      await map.style.addSource(mb.GeoJsonSource(id: _sourceId, data: data));
+
+      final layer = mb.ModelLayer(id: _layerId, sourceId: _sourceId)
+        ..modelId = _modelUri(glbAssetPath)
+      // ⚠️ Debug-friendly defaults: big + slightly lifted.
+      // Once you see it, you can dial these back in MapIds.
+        ..modelScale = [modelScale, modelScale, modelScale]
+        ..modelTranslation = [0.0, 0.0, modelHeightMeters]
+        ..modelRotation = [0.0, 0.0, modelHeadingOffset]
+        ..modelType = mb.ModelType.COMMON_3D;
+
+      // ✅ Put model above everything else (prevents being hidden by 3D buildings layers)
+      await map.style.addLayer(layer);
+
+      _modelAdded = true;
+      return;
     }
+
+    await map.style.setStyleSourceProperty(_sourceId, 'data', data);
+  }
+
+  /// ✅ Works on iOS + Android.
+  /// Android often needs the flutter_assets prefix.
+  String _modelUri(String flutterAssetPath) {
+    // already a full uri
+    if (flutterAssetPath.startsWith("asset://")) return flutterAssetPath;
+
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      // MOST reliable for Android
+      return "asset://flutter_assets/$flutterAssetPath";
+    }
+    // iOS usually works without flutter_assets
+    return "asset://$flutterAssetPath";
   }
 
   Future<void> _loadAsset() async {
@@ -38,14 +110,15 @@ class MascotAnnotations {
     _imageBytes = data.buffer.asUint8List();
   }
 
-  Future<void> _createMarker() async {
+  Future<void> _createInvisibleTapHitbox() async {
     if (_mgr == null) return;
 
     await _mgr!.deleteAll();
 
     final options = mb.PointAnnotationOptions(
       geometry: mb.Point(coordinates: mb.Position(lng, lat)),
-      iconSize: 0.9,
+      iconSize: 2.0,
+      iconOpacity: 0.0,
     );
 
     if (_imageBytes != null) {
@@ -54,11 +127,13 @@ class MascotAnnotations {
       options.iconImage = "marker-15";
     }
 
-    final mascot = await _mgr!.create(options);
+    _tapPoint = await _mgr!.create(options);
 
-    _mgr!.addOnPointAnnotationClickListener(_Listener((annotation) {
-      if (annotation.id == mascot.id) onTap();
-    }));
+    _mgr!.addOnPointAnnotationClickListener(
+      _Listener((annotation) {
+        if (_tapPoint != null && annotation.id == _tapPoint!.id) onTap();
+      }),
+    );
   }
 }
 

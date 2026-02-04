@@ -1,11 +1,30 @@
-import 'dart:async'; // for TimeoutException
-import 'package:flutter/material.dart';
+// 4_mascot_screen.dart
+//
+// Smooth/simple version (no log sheet, no extra UI).
+// Footer status text updates as the verification progresses.
+//
+// Protocol (same as your web frontend):
+// 1) GET  /api/nonce  -> { nonceHex }
+// 2) BLE: scan/connect to SERVICE_UUID
+// 3) Read beaconId from ID_CHAR_UUID (8 bytes)
+// 4) Write raw 16-byte nonce to SIGN_NONCE_UUID (writeWithoutResponse)
+// 5) Wait notify 72 bytes on SIGN_RESP_UUID: ts_be64(8) || sig(64)
+// 6) POST /api/verify { beaconIdHex, nonceHex, tsMs, sigHex }
+// 7) If ok=true -> navigate to Catch screen
+//
+// Requires deps in pubspec.yaml:
+//   http: ^1.2.0
+//   flutter_blue_plus: ^1.34.0
 
-import 'NetCatchScreen.dart'; // can be removed if unused now
-import '../services/bluetooth_service.dart';
-import '../services/bluetooth_service_factory.dart';
-import '../presence/proof_of_presence.dart';
-import '../state/current_user.dart';
+import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:http/http.dart' as http;
+
+import '6_catch_screen.dart';
 
 class MascotScreen extends StatefulWidget {
   const MascotScreen({Key? key}) : super(key: key);
@@ -16,23 +35,35 @@ class MascotScreen extends StatefulWidget {
 
 class _MascotScreenState extends State<MascotScreen>
     with SingleTickerProviderStateMixin {
-  final BluetoothService _bluetoothService = getBluetoothService();
-
   // Game state
   bool _isVerifying = false;
   String _verificationStatus = 'Tap "Challenge" to start!';
   bool _hasCaughtMascot = false;
   bool _hasAttempted = false;
 
-  int _coins = 5; // TODO: hook this up to your actual player data.
+  int _coins = 5;
 
   // Mascot meta
   static const String _mascotName = 'Storky';
   static const String _mascotLocation = 'UCSB Storke Tower';
   static const String _mascotTier = 'Campus Legend • Tier S';
-  static const double _catchProbability = 0.65; // currently unused
+  static const double _catchProbability = 0.65;
 
   late final AnimationController _pulseController;
+
+  // ---- API + BLE constants (match your web frontend UUIDs) ----
+  static const String _apiBase = "https://spacescrypt-api.onrender.com";
+  // For LAN testing:
+  // static const String _apiBase = "http://172.20.10.7:5001";
+
+  static final Guid _serviceUuid =
+  Guid("eb5c86a4-733c-4d9d-aab2-285c2dab09a1");
+  static final Guid _idCharUuid =
+  Guid("eb5c86a4-733c-4d9d-aab2-285c2dab09a2");
+  static final Guid _signNonceUuid =
+  Guid("eb5c86a4-733c-4d9d-aab2-285c2dab09a3");
+  static final Guid _signRespUuid =
+  Guid("eb5c86a4-733c-4d9d-aab2-285c2dab09a4");
 
   @override
   void initState() {
@@ -64,110 +95,245 @@ class _MascotScreenState extends State<MascotScreen>
     setState(() {
       _isVerifying = true;
       _hasAttempted = true;
-      _verificationStatus = 'Starting Proof of Presence…';
+      _verificationStatus = 'Getting nonce…';
       _coins -= 2;
     });
 
-    final client = ProofOfPresenceClient(
-      baseUrl: "http://172.20.10.7:5001",
-      userId: CurrentUser.headerUserId,
-      piId: "0000000000000001",
-    );
-
-    if (!mounted) return;
-
-    // Show live logs while PoP runs
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.black,
-      builder: (ctx) {
-        return SafeArea(
-          child: SizedBox(
-            height: MediaQuery.of(ctx).size.height * 0.75,
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          "PoP Live Logs",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.of(ctx).pop(),
-                        icon: const Icon(Icons.close, color: Colors.white70),
-                      )
-                    ],
-                  ),
-                ),
-                const Divider(height: 1, color: Colors.white24),
-                Expanded(
-                  child: ValueListenableBuilder<List<String>>(
-                    valueListenable: client.logList,
-                    builder: (_, logs, __) {
-                      return ListView.builder(
-                        padding: const EdgeInsets.all(12),
-                        itemCount: logs.length,
-                        itemBuilder: (_, i) => Padding(
-                          padding: const EdgeInsets.only(bottom: 6),
-                          child: Text(
-                            logs[i],
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontFamily: "monospace",
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+    BluetoothDevice? device;
+    StreamSubscription<List<int>>? notifSub;
 
     try {
-      final out = await client.run();
+      // 1) GET nonce
+      final nonceHex = await _fetchNonceHex();
       if (!mounted) return;
 
-      final resultJson = out["result"] as Map<String, dynamic>?;
+      setState(() {
+        _verificationStatus = 'Connecting to beacon…';
+      });
 
-      if (resultJson?["ok"] == true) {
+      // 2) Scan for device advertising our service UUID
+      device = await _scanForBeacon(_serviceUuid);
+      if (!mounted) return;
+
+      // 3) Connect + discover characteristics
+      setState(() {
+        _verificationStatus = 'Verifying presence…';
+      });
+
+      await device.connect(timeout: const Duration(seconds: 10), autoConnect: false);
+
+      final services = await device.discoverServices();
+      final svc = services.firstWhere(
+            (s) => s.uuid == _serviceUuid,
+        orElse: () => throw Exception("Service not found on beacon"),
+      );
+
+      final idChar = svc.characteristics.firstWhere(
+            (c) => c.uuid == _idCharUuid,
+        orElse: () => throw Exception("ID characteristic not found"),
+      );
+
+      final signNonceChar = svc.characteristics.firstWhere(
+            (c) => c.uuid == _signNonceUuid,
+        orElse: () => throw Exception("Nonce characteristic not found"),
+      );
+
+      final signRespChar = svc.characteristics.firstWhere(
+            (c) => c.uuid == _signRespUuid,
+        orElse: () => throw Exception("Response characteristic not found"),
+      );
+
+      // 4) Read beaconId
+      final idBytes = await idChar.read();
+      final beaconIdHex = _bytesToHex(idBytes).toLowerCase();
+
+      // 5) Subscribe to notify (wait for exactly 72 bytes)
+      await signRespChar.setNotifyValue(true);
+
+      final completer = Completer<Uint8List>();
+      notifSub = signRespChar.onValueReceived.listen((value) {
+        final raw = Uint8List.fromList(value);
+        if (raw.length == 72 && !completer.isCompleted) {
+          completer.complete(raw);
+        }
+      });
+
+      // 6) Write nonce (16 bytes) without response
+      final nonceBytes = _hexToBytes(nonceHex);
+      await signNonceChar.write(nonceBytes, withoutResponse: true);
+
+      // 7) Wait for notify
+      final raw = await completer.future.timeout(
+        const Duration(seconds: 6),
+        onTimeout: () => throw Exception("Verification timed out"),
+      );
+
+      // Parse notify: ts(8) || sig(64)
+      final tsBytes = raw.sublist(0, 8);
+      final sigBytes = raw.sublist(8);
+      final tsMs = _be64ToMs(tsBytes);
+      final sigHex = _bytesToHex(sigBytes).toLowerCase();
+
+      // 8) POST verify
+      final ok = await _postVerify(
+        beaconIdHex: beaconIdHex,
+        nonceHex: nonceHex,
+        tsMs: tsMs.toString(),
+        sigHex: sigHex,
+      );
+
+      if (!mounted) return;
+
+      if (ok) {
         setState(() {
-          _isVerifying = false;
-          _hasCaughtMascot = true;
-          _verificationStatus = 'Verified presence — $_mascotName caught! 🎉';
-          _coins += 3;
+          _verificationStatus = 'Presence verified — start catching!';
         });
 
-        _showCatchDialog();
+        final didCatch = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const CatchScreen(mascotName: _mascotName),
+          ),
+        );
+
+        if (!mounted) return;
+
+        setState(() {
+          _isVerifying = false;
+
+          final success = didCatch == true;
+          _hasCaughtMascot = success;
+
+          _verificationStatus = success
+              ? '$_mascotName caught! 🎉'
+              : '$_mascotName escaped! 😭';
+
+          if (success) _coins += 3;
+        });
       } else {
         setState(() {
           _isVerifying = false;
-          _verificationStatus =
-          'PoP failed: ${resultJson?["error"] ?? "unknown error"}';
+          _verificationStatus = 'Verification failed';
         });
       }
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _isVerifying = false;
-        _verificationStatus = 'PoP error: $e';
+        _verificationStatus = 'Verification error: $e';
       });
+    } finally {
+      try {
+        await notifSub?.cancel();
+      } catch (_) {}
+      try {
+        if (device != null) {
+          await device.disconnect();
+        }
+      } catch (_) {}
     }
   }
+
+  // -------------------- Backend helpers --------------------
+
+  Future<String> _fetchNonceHex() async {
+    final r = await http.get(Uri.parse("$_apiBase/api/nonce"));
+    if (r.statusCode != 200) {
+      throw Exception("nonce failed: ${r.statusCode}");
+    }
+    final json = jsonDecode(r.body) as Map<String, dynamic>;
+    final nonceHex = (json["nonceHex"] as String).toLowerCase();
+    if (!RegExp(r'^[0-9a-f]{32}$').hasMatch(nonceHex)) {
+      throw Exception("bad nonceHex");
+    }
+    return nonceHex;
+  }
+
+  Future<bool> _postVerify({
+    required String beaconIdHex,
+    required String nonceHex,
+    required String tsMs,
+    required String sigHex,
+  }) async {
+    final payload = {
+      "beaconIdHex": beaconIdHex,
+      "nonceHex": nonceHex,
+      "tsMs": tsMs,
+      "sigHex": sigHex,
+    };
+
+    final r = await http.post(
+      Uri.parse("$_apiBase/api/verify"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode(payload),
+    );
+
+    final json = jsonDecode(r.body) as Map<String, dynamic>;
+    return json["ok"] == true;
+  }
+
+  // -------------------- BLE helpers --------------------
+
+  Future<BluetoothDevice> _scanForBeacon(Guid serviceUuid) async {
+    // ensure not already scanning
+    try {
+      await FlutterBluePlus.stopScan();
+    } catch (_) {}
+
+    BluetoothDevice? found;
+
+    final sub = FlutterBluePlus.scanResults.listen((results) {
+      for (final r in results) {
+        if (r.advertisementData.serviceUuids.contains(serviceUuid)) {
+          found = r.device;
+          break;
+        }
+      }
+    });
+
+    await FlutterBluePlus.startScan(
+      withServices: [serviceUuid],
+      timeout: const Duration(seconds: 12),
+    );
+
+    // wait until scan timeout ends
+    await Future.delayed(const Duration(seconds: 12));
+    await FlutterBluePlus.stopScan();
+    await sub.cancel();
+
+    if (found == null) {
+      throw Exception("No beacon found");
+    }
+    return found!;
+  }
+
+  // -------------------- bytes helpers --------------------
+
+  static String _bytesToHex(List<int> b) =>
+      b.map((x) => x.toRadixString(16).padLeft(2, "0")).join();
+
+  static Uint8List _hexToBytes(String hex) {
+    final h = hex.toLowerCase();
+    if (!RegExp(r'^[0-9a-f]*$').hasMatch(h) || h.length % 2 != 0) {
+      throw ArgumentError("bad hex");
+    }
+    final out = Uint8List(h.length ~/ 2);
+    for (int i = 0; i < out.length; i++) {
+      out[i] = int.parse(h.substring(i * 2, i * 2 + 2), radix: 16);
+    }
+    return out;
+  }
+
+  static int _be64ToMs(Uint8List u8) {
+    if (u8.length != 8) throw ArgumentError("ts must be 8 bytes");
+    BigInt n = BigInt.zero;
+    for (int i = 0; i < 8; i++) {
+      n = (n << 8) | BigInt.from(u8[i]);
+    }
+    return n.toInt();
+  }
+
+  // -------------------- UI helpers --------------------
 
   void _claimCoin() {
     setState(() {
@@ -181,103 +347,28 @@ class _MascotScreenState extends State<MascotScreen>
     );
   }
 
-  void _showCatchDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return Dialog(
-          backgroundColor: Colors.black.withOpacity(0.85),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Verified presence!\n$_mascotName caught!',
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  height: 120,
-                  child: ScaleTransition(
-                    scale: _pulseController,
-                    child: Hero(
-                      tag: 'mascot-$_mascotName',
-                      child: Image.asset(
-                        'assets/icons/storke-nobackground.png',
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  '+3 Campus Coins\n+1 Mascot in Collection',
-                  style: TextStyle(
-                    color: Colors.yellow,
-                    fontSize: 16,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFFC857),
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: const Text('Nice!'),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   Color _statusColor() {
     if (_isVerifying) return Colors.amber.shade300;
 
     final msg = _verificationStatus;
 
-    // 🔴 Anything that failed / timed out -> red
     if (msg.startsWith('Verification failed') ||
-        msg.startsWith('Verification timed out') ||  // NEW
+        msg.startsWith('Verification timed out') ||
+        msg.startsWith('Verification error') ||
         msg.startsWith('An error')) {
       return Colors.redAccent.shade200;
     }
 
-    // 🟠 Soft fail / escaped vibe
-    if (msg.contains('slipped') || msg.contains('escaped')) {
+    if (msg.contains('escaped')) {
       return Colors.orangeAccent.shade200;
     }
 
-    // 🟢 Success state
     if (_hasCaughtMascot) {
       return Colors.lightGreenAccent.shade400;
     }
 
-    // Default neutral
     return Colors.white70;
   }
-
-
-  // === UI BUILDERS ===
 
   @override
   Widget build(BuildContext context) {
@@ -304,10 +395,7 @@ class _MascotScreenState extends State<MascotScreen>
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16.0,
-              vertical: 12.0,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
             child: Column(
               children: [
                 _buildTopBar(),
@@ -350,8 +438,7 @@ class _MascotScreenState extends State<MascotScreen>
           ),
           child: Row(
             children: [
-              const Icon(Icons.monetization_on,
-                  color: Colors.yellow, size: 20),
+              const Icon(Icons.monetization_on, color: Colors.yellow, size: 20),
               const SizedBox(width: 4),
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 300),
@@ -362,10 +449,7 @@ class _MascotScreenState extends State<MascotScreen>
                 child: Text(
                   '$_coins',
                   key: ValueKey<int>(_coins),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                  ),
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ),
             ],
@@ -378,9 +462,7 @@ class _MascotScreenState extends State<MascotScreen>
   Widget _buildMascotCard() {
     return Card(
       elevation: 14,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(28),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       color: Colors.white.withOpacity(0.96),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
@@ -411,26 +493,17 @@ class _MascotScreenState extends State<MascotScreen>
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: _hasCaughtMascot
-                        ? Colors.green.shade100
-                        : Colors.orange.shade100,
+                    color: _hasCaughtMascot ? Colors.green.shade100 : Colors.orange.shade100,
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Row(
                     children: [
                       Icon(
-                        _hasCaughtMascot
-                            ? Icons.check_circle
-                            : Icons.blur_on,
+                        _hasCaughtMascot ? Icons.check_circle : Icons.blur_on,
                         size: 18,
-                        color: _hasCaughtMascot
-                            ? Colors.green.shade800
-                            : Colors.orange.shade800,
+                        color: _hasCaughtMascot ? Colors.green.shade800 : Colors.orange.shade800,
                       ),
                       const SizedBox(width: 4),
                       Text(
@@ -438,9 +511,7 @@ class _MascotScreenState extends State<MascotScreen>
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: _hasCaughtMascot
-                              ? Colors.green.shade800
-                              : Colors.orange.shade800,
+                          color: _hasCaughtMascot ? Colors.green.shade800 : Colors.orange.shade800,
                         ),
                       ),
                     ],
@@ -460,10 +531,7 @@ class _MascotScreenState extends State<MascotScreen>
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: const RadialGradient(
-                        colors: [
-                          Color(0xFF4263EB),
-                          Color(0xFFB3C5FF),
-                        ],
+                        colors: [Color(0xFF4263EB), Color(0xFFB3C5FF)],
                         radius: 0.85,
                       ),
                       boxShadow: [
@@ -543,18 +611,12 @@ class _MascotScreenState extends State<MascotScreen>
           child: ElevatedButton.icon(
             onPressed: canChallenge ? _challengeMascot : null,
             icon: const Icon(Icons.sports_martial_arts),
-            label: Text(
-              canChallenge ? 'Challenge' : 'Need 2 Coins',
-            ),
+            label: Text(canChallenge ? 'Challenge' : 'Need 2 Coins'),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              backgroundColor:
-              canChallenge ? const Color(0xFFFFC857) : Colors.grey,
-              foregroundColor:
-              canChallenge ? Colors.black : Colors.grey.shade200,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              backgroundColor: canChallenge ? const Color(0xFFFFC857) : Colors.grey,
+              foregroundColor: canChallenge ? Colors.black : Colors.grey.shade200,
               elevation: canChallenge ? 4 : 0,
             ),
           ),
@@ -569,9 +631,7 @@ class _MascotScreenState extends State<MascotScreen>
               foregroundColor: Colors.white,
               side: const BorderSide(color: Colors.white70),
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
           ),
         ),
@@ -611,15 +671,11 @@ class _MascotScreenState extends State<MascotScreen>
           Expanded(
             child: AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 250),
-              style: TextStyle(
-                color: _statusColor(),
-                fontSize: 14,
-              ),
+              style: TextStyle(color: _statusColor(), fontSize: 14),
               child: Text(
                 showHint
-                    ? 'Spend 2 Campus Coins to challenge Storky. We’ll verify your presence with the beacon to catch the mascot!'
+                    ? 'Spend 2 Campus Coins to challenge $_mascotName. We’ll verify your presence, then you can try to catch it!'
                     : _verificationStatus,
-                textAlign: TextAlign.left,
               ),
             ),
           ),
@@ -634,20 +690,10 @@ class _MascotScreenState extends State<MascotScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
           const SizedBox(width: 12),
           Flexible(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 14),
-              textAlign: TextAlign.right,
-            ),
+            child: Text(value, style: const TextStyle(fontSize: 14), textAlign: TextAlign.right),
           ),
         ],
       ),
