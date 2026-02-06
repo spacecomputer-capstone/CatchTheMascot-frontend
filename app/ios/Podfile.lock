@@ -1365,14 +1365,14 @@ PODS:
     - MapboxCommon (= 24.16.0)
     - MapboxCoreMaps (= 11.16.0)
     - Turf (= 4.0.0)
-  - motion_sensors (0.0.1):
-    - Flutter
   - nanopb (3.30910.0):
     - nanopb/decode (= 3.30910.0)
     - nanopb/encode (= 3.30910.0)
   - nanopb/decode (3.30910.0)
   - nanopb/encode (3.30910.0)
   - permission_handler_apple (9.3.0):
+    - Flutter
+  - sensors_plus (0.0.1):
     - Flutter
   - shared_preferences_foundation (0.0.1):
     - Flutter
@@ -1387,8 +1387,8 @@ DEPENDENCIES:
   - geolocator_apple (from `.symlinks/plugins/geolocator_apple/darwin`)
   - google_maps_flutter_ios (from `.symlinks/plugins/google_maps_flutter_ios/ios`)
   - mapbox_maps_flutter (from `.symlinks/plugins/mapbox_maps_flutter/ios`)
-  - motion_sensors (from `.symlinks/plugins/motion_sensors/ios`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
+  - sensors_plus (from `.symlinks/plugins/sensors_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
 
 SPEC REPOS:
@@ -1430,10 +1430,10 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/google_maps_flutter_ios/ios"
   mapbox_maps_flutter:
     :path: ".symlinks/plugins/mapbox_maps_flutter/ios"
-  motion_sensors:
-    :path: ".symlinks/plugins/motion_sensors/ios"
   permission_handler_apple:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
+  sensors_plus:
+    :path: ".symlinks/plugins/sensors_plus/ios"
   shared_preferences_foundation:
     :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
 
@@ -1464,9 +1464,9 @@ SPEC CHECKSUMS:
   MapboxCommon: 479562bceca6b10d1c3b8bca5006ef86c51d7255
   MapboxCoreMaps: b96038f97c62e0e72ebece2a3b909ca4eda8ab21
   MapboxMaps: 8c0f733a3250a03bcc4938347ca5f699b0804ce1
-  motion_sensors: 03f55b7c637a7e365a0b5f9697a449f9059d5d91
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
   permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
+  sensors_plus: 18a9b346c43e157da17d2c8e99def703f9efb9d8
   shared_preferences_foundation: 5086985c1d43c5ba4d5e69a4e8083a389e2909e6
   Turf: c9eb11a65d96af58cac523460fd40fec5061b081
 

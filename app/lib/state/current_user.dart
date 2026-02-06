@@ -24,17 +24,6 @@ class CurrentUser {
 
     if (username != null && user == null) {
       // Temporary placeholder user (safe for now)
-      user = User(username, '', [], [], [], 0);
-    }
-  }
-
-  /// Minimal persistence restore (no Firestore fetch yet)
-  static Future<void> restoreIfPossible() async {
-    final prefs = await SharedPreferences.getInstance();
-    final username = prefs.getString('username');
-
-    if (username != null && user == null) {
-      // Temporary placeholder user (safe for now)
       user = User(
         username,
         '',
