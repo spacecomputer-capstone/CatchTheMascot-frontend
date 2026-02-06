@@ -50,4 +50,4 @@ flutter:
 flutter_icons:
   android: true
   ios: true
-  image_path: lib/assets/icons/storke-nobackground.png
+  image_path: lib/assets/mascotimages/1_raccoon.png
