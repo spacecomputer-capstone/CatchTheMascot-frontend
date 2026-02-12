@@ -57,6 +57,7 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
 
   // Mapbox token for Directions API
   // (Use your same token; feel free to move this into MapIds)
+  //public access tokens
   static const String _mapboxAccessToken =
       "pk.eyJ1Ijoic2FuaWxrYXR1bGEiLCJhIjoiY21pYjRoOHZsMDVyZjJpcHFxdmg2OXVicSJ9.JBlvf3X2eEd7TA0u8K5B0Q";
 
