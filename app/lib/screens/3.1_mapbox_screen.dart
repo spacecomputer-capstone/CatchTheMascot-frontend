@@ -694,8 +694,8 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
                 ),
                 Positioned(
                   bottom: 12,
-                  left: 200,
-                  child: FloatingActionButton.extended(
+                  left: 210,
+                  child: FloatingActionButton(
                     backgroundColor: const Color.fromRGBO(65, 64, 64, 1),
                     onPressed: () {
                       Navigator.of(context).push(
@@ -704,14 +704,7 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
                         ),
                       );
                     },
-                    label: const Text(
-                      "Mascotarium",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    child: const Icon(Icons.menu_book, color: Colors.white),
                   ),
                 ),
               ],

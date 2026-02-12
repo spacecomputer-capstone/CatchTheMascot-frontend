@@ -46,6 +46,17 @@ flutter:
     - lib/assets/icons/storke.png
     - assets/icons/
     - assets/player/player.glb
+    - lib/assets/mascotimages/1_raccoon.png
+    - lib/assets/mascotimages/2_ducks.png
+    - lib/assets/mascotimages/3_otter.png
+    - lib/assets/mascotimages/4_oilrig.png
+    - lib/assets/mascotimages/5_storkie.png
+    - lib/assets/mascotimages/6_raccoon_surf.png
+    - lib/assets/mascotimages/7_raccoon_engrhoodie.png
+    - lib/assets/mascotimages/8_raccoon_pizza.png
+    - lib/assets/mascotimages/9_raccoon_lemon.png
+    - lib/assets/mascotimages/10_ducks_research.png
+    - lib/assets/mascotimages/raccoonquantumresearch.png
 
 flutter_icons:
   android: true
