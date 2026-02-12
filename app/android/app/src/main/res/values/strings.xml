@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">app</string>
+
+    <!-- REQUIRED by mapbox_maps_flutter -->
+    <string name="mapbox_access_token">
+        pk.eyJ1Ijoic2FuaWxrYXR1bGEiLCJhIjoiY21pYjRoOHZsMDVyZjJpcHFxdmg2OXVicSJ9.JBlvf3X2eEd7TA0u8K5B0Q
+    </string>
+</resources>
