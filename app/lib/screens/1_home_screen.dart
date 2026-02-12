@@ -89,7 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         if (user != null) {
                           CurrentUser.set(user);
                           Navigator.pushReplacementNamed(
-                              context, Routes.locationPermission);
+                              context, Routes.tutorial);
                         }
                       },
                     ),

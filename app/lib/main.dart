@@ -20,6 +20,7 @@ import 'package:app/models/mascot.dart';
 import 'screens/99_user_api_test_screen.dart';
 import 'package:app/state/current_user.dart';
 import 'package:app/state/current_user.dart';
+import 'screens/tutorial_screen.dart';
 
 void main() async {
   // Ensure Flutter widgets are initialized
@@ -67,6 +68,7 @@ class CatchTheMascotApp extends StatelessWidget {
         Routes.map: (context) => const CatchMascotMapboxScreen(),
         Routes.apiTest: (context) => ApiTestScreen(),
         Routes.userApiTest: (context) => const UserApiTestScreen(),
+        Routes.tutorial: (context) => const TutorialScreen(),
       },
     );
   }
