@@ -6,6 +6,9 @@ class TutorialScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final isFromMap = args?['isFromMap'] ?? false;
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -73,8 +76,12 @@ class TutorialScreen extends StatelessWidget {
                 
                 ElevatedButton(
                   onPressed: () {
-                    // Navigate to location permission screen after tutorial
-                    Navigator.pushReplacementNamed(context, Routes.locationPermission);
+                    if (isFromMap) {
+                      Navigator.pop(context);
+                    } else {
+                      // Navigate to location permission screen after tutorial
+                      Navigator.pushReplacementNamed(context, Routes.locationPermission);
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -88,7 +95,7 @@ class TutorialScreen extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  child: const Text('Start Adventure'),
+                  child: Text(isFromMap ? 'Done' : 'Start Adventure'),
                 ),
                 const SizedBox(height: 16),
               ],

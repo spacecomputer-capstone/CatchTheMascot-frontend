@@ -663,6 +663,20 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
               children: [
                 const MapTopTitle(),
 
+                // Tutorial button (top-left)
+                Positioned(
+                  top: 0,
+                  left: 16,
+                  child: _TutorialButton(
+                    onTap: () {
+                      Navigator.of(context).pushNamed(
+                        Routes.tutorial,
+                        arguments: {'isFromMap': true},
+                      );
+                    },
+                  ),
+                ),
+
                 // ✅ Small circular pill (top-right), placed lower so it doesn't collide with your title.
                 if (nearbyCount > 0)
                   Positioned(
@@ -761,4 +775,37 @@ class MascotWithDistance {
 
   final MascotTarget target;
   final double distanceM;
+}
+
+class _TutorialButton extends StatelessWidget {
+  const _TutorialButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkResponse(
+        onTap: onTap,
+        radius: 24,
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.black.withOpacity(0.40),
+            border: Border.all(color: Colors.white.withOpacity(0.18)),
+          ),
+          child: const Center(
+            child: Icon(
+              Icons.info_outline,
+              color: Colors.white,
+              size: 22,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
