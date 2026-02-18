@@ -19,12 +19,14 @@ import '../widgets/map_hud/map_zoom_controls.dart';
 
 import '3.2_player.dart';
 import '4_mascot_screen.dart';
+import '8_inventory_screen.dart';
 
 class CatchMascotMapboxScreen extends StatefulWidget {
   const CatchMascotMapboxScreen({super.key});
 
   @override
-  State<CatchMascotMapboxScreen> createState() => _CatchMascotMapboxScreenState();
+  State<CatchMascotMapboxScreen> createState() =>
+      _CatchMascotMapboxScreenState();
 }
 
 class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
@@ -55,6 +57,7 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
 
   // Mapbox token for Directions API
   // (Use your same token; feel free to move this into MapIds)
+  //public access tokens
   static const String _mapboxAccessToken =
       "pk.eyJ1Ijoic2FuaWxrYXR1bGEiLCJhIjoiY21pYjRoOHZsMDVyZjJpcHFxdmg2OXVicSJ9.JBlvf3X2eEd7TA0u8K5B0Q";
 
@@ -232,15 +235,15 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
     for (final t in _allMascots) {
       final marker = MascotAnnotations(
         map: _map!,
-        assetPath: t.pngAssetPath,       // invisible hitbox
-        glbAssetPath: t.glbAssetPath,    // visible model
+        assetPath: t.pngAssetPath, // invisible hitbox
+        glbAssetPath: t.glbAssetPath, // visible model
         lat: t.lat,
         lng: t.lng,
         onTap: () {
           if (!mounted) return;
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const MascotScreen()),
-          );
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const MascotScreen()));
         },
         modelScale: MapIds.mascotModelScale,
         modelHeightMeters: MapIds.mascotModelHeightMeters,
@@ -370,7 +373,9 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
                         padding: const EdgeInsets.only(top: 12),
                         child: Text(
                           "No mascots nearby yet.",
-                          style: TextStyle(color: Colors.white.withOpacity(0.7)),
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.7),
+                          ),
                         ),
                       )
                     else
@@ -378,13 +383,16 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
                         child: ListView.separated(
                           shrinkWrap: true,
                           itemCount: _nearbyMascots.length,
-                          separatorBuilder: (_, __) => Divider(
-                            height: 1,
-                            color: Colors.white.withOpacity(0.08),
-                          ),
+                          separatorBuilder:
+                              (_, __) => Divider(
+                                height: 1,
+                                color: Colors.white.withOpacity(0.08),
+                              ),
                           itemBuilder: (_, i) {
                             final item = _nearbyMascots[i];
-                            final selected = _selectedMascotIds.contains(item.target.id);
+                            final selected = _selectedMascotIds.contains(
+                              item.target.id,
+                            );
 
                             return ListTile(
                               contentPadding: EdgeInsets.zero,
@@ -397,7 +405,9 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
                               ),
                               subtitle: Text(
                                 _formatDistance(item.distanceM),
-                                style: TextStyle(color: Colors.white.withOpacity(0.7)),
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.7),
+                                ),
                               ),
                               trailing: Checkbox(
                                 value: selected,
@@ -487,10 +497,7 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
     // Add empty source if not present
     try {
       await _map!.style.addSource(
-        mb.GeoJsonSource(
-          id: _routesSourceId,
-          data: _emptyFeatureCollection(),
-        ),
+        mb.GeoJsonSource(id: _routesSourceId, data: _emptyFeatureCollection()),
       );
     } catch (_) {
       // source may already exist
@@ -498,23 +505,26 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
 
     // Add line layer if not present
     try {
-      final layer = mb.LineLayer(id: _routesLayerId, sourceId: _routesSourceId)
-        ..lineWidth = 5.0
-        ..lineOpacity = 0.85;
+      final layer =
+          mb.LineLayer(id: _routesLayerId, sourceId: _routesSourceId)
+            ..lineWidth = 5.0
+            ..lineOpacity = 0.85;
       await _map!.style.addLayer(layer);
     } catch (_) {
       // layer may already exist
     }
   }
 
-  String _emptyFeatureCollection() => convert.jsonEncode({
-    "type": "FeatureCollection",
-    "features": [],
-  });
+  String _emptyFeatureCollection() =>
+      convert.jsonEncode({"type": "FeatureCollection", "features": []});
 
   Future<void> _clearRoutes() async {
     if (_map == null) return;
-    await _map!.style.setStyleSourceProperty(_routesSourceId, "data", _emptyFeatureCollection());
+    await _map!.style.setStyleSourceProperty(
+      _routesSourceId,
+      "data",
+      _emptyFeatureCollection(),
+    );
   }
 
   Future<void> _updateSelectedRoutesThrottled() async {
@@ -537,19 +547,23 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
     final startLat = _currentPos!.latitude;
     final startLng = _currentPos!.longitude;
 
-    final selected = _allMascots.where((m) => _selectedMascotIds.contains(m.id)).toList();
+    final selected =
+        _allMascots.where((m) => _selectedMascotIds.contains(m.id)).toList();
 
     // Fetch routes in parallel
-    final futures = selected.map((m) => _fetchRouteGeoJsonFeature(
-      startLat: startLat,
-      startLng: startLng,
-      endLat: m.lat,
-      endLng: m.lng,
-      featureId: m.id,
-      featureName: m.name,
-    ));
+    final futures = selected.map(
+      (m) => _fetchRouteGeoJsonFeature(
+        startLat: startLat,
+        startLng: startLng,
+        endLat: m.lat,
+        endLng: m.lng,
+        featureId: m.id,
+        featureName: m.name,
+      ),
+    );
 
-    final features = (await Future.wait(futures)).whereType<Map<String, dynamic>>().toList();
+    final features =
+        (await Future.wait(futures)).whereType<Map<String, dynamic>>().toList();
 
     final fc = convert.jsonEncode({
       "type": "FeatureCollection",
@@ -570,8 +584,8 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
     try {
       final uri = Uri.parse(
         "https://api.mapbox.com/directions/v5/mapbox/walking/"
-            "$startLng,$startLat;$endLng,$endLat"
-            "?geometries=geojson&overview=full&access_token=$_mapboxAccessToken",
+        "$startLng,$startLat;$endLng,$endLat"
+        "?geometries=geojson&overview=full&access_token=$_mapboxAccessToken",
       );
 
       final resp = await http.get(uri);
@@ -588,9 +602,7 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
       return {
         "type": "Feature",
         "id": featureId,
-        "properties": {
-          "name": featureName,
-        },
+        "properties": {"name": featureName},
         "geometry": geometry,
       };
     } catch (_) {
@@ -616,17 +628,13 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
     if (_locationDenied) {
       return const Scaffold(
         body: SafeArea(
-          child: Center(
-            child: Text("Location permission required"),
-          ),
+          child: Center(child: Text("Location permission required")),
         ),
       );
     }
 
     if (_currentPos == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final nearbyCount = _nearbyMascots.length;
@@ -666,7 +674,7 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
                 // ✅ Small circular pill (top-right), placed lower so it doesn't collide with your title.
                 if (nearbyCount > 0)
                   Positioned(
-                    top: 56,  // pushes below your Catch the mascot pill area
+                    top: 56, // pushes below your Catch the mascot pill area
                     right: 14,
                     child: _NearbyMascotCircle(
                       count: nearbyCount,
@@ -685,6 +693,21 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
                   playerName: "You",
                   playerSubtitle: "Lv. 1 • 0.0 km walked",
                 ),
+                Positioned(
+                  bottom: 12,
+                  left: 210,
+                  child: FloatingActionButton(
+                    backgroundColor: const Color.fromRGBO(65, 64, 64, 1),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const InventoryScreen(),
+                        ),
+                      );
+                    },
+                    child: const Icon(Icons.menu_book, color: Colors.white),
+                  ),
+                ),
               ],
             ),
           ),
@@ -695,10 +718,7 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
 }
 
 class _NearbyMascotCircle extends StatelessWidget {
-  const _NearbyMascotCircle({
-    required this.count,
-    required this.onTap,
-  });
+  const _NearbyMascotCircle({required this.count, required this.onTap});
 
   final int count;
   final VoidCallback onTap;
@@ -754,10 +774,7 @@ class MascotTarget {
 }
 
 class MascotWithDistance {
-  const MascotWithDistance({
-    required this.target,
-    required this.distanceM,
-  });
+  const MascotWithDistance({required this.target, required this.distanceM});
 
   final MascotTarget target;
   final double distanceM;
