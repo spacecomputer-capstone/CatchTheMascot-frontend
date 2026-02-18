@@ -19,6 +19,8 @@ import '../widgets/map_hud/map_zoom_controls.dart';
 
 import '3.2_player.dart';
 import '4_mascot_screen.dart';
+import 'package:app/state/current_user.dart';
+import 'package:app/utils/routes.dart';
 
 class CatchMascotMapboxScreen extends StatefulWidget {
   const CatchMascotMapboxScreen({super.key});
@@ -682,8 +684,11 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
                   isAutoFollow: _isAutoFollow,
                   onRecenter: _recenterOnPlayer,
                   onToggleFollow: _toggleFollowMode,
-                  playerName: "You",
+                  playerName: CurrentUser.user?.username ?? "Player",
                   playerSubtitle: "Lv. 1 • 0.0 km walked",
+                  onPlayerPillTap: () {
+                    Navigator.pushNamed(context, Routes.profile);
+                  },
                 ),
               ],
             ),

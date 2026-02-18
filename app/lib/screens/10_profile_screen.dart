@@ -101,7 +101,7 @@ class ProfileScreen extends StatelessWidget {
                       },
                       style: _buttonStyle(),
                       child: Text(
-                        "Mascots Caught (${user.caughtMascots.length})",
+                        "My Collection (${user.caughtMascots.length})",
                         style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                     ),

@@ -23,13 +23,12 @@ class MapPlayerPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const CircleAvatar(
-            radius: 14,
-            backgroundColor: Colors.white24,
-            child: Icon(
-              Icons.person,
-              color: Colors.white,
-              size: 18,
+          ClipOval(
+            child: Image.asset(
+              "assets/player/player-half.png",
+              width: 40,
+              height: 40,
+              fit: BoxFit.cover,
             ),
           ),
           const SizedBox(width: 8),

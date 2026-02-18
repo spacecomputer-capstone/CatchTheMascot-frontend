@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart'; //firebase
 import 'firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'screens/1_home_screen.dart';
+import 'screens/1_register_screen.dart';
 import 'screens/2_location_permission_screen.dart';
 // import 'screens/3_map_screen.dart';
 // import 'screens/4_verification_screen.dart';
@@ -9,6 +10,7 @@ import 'screens/2_location_permission_screen.dart';
 // import 'screens/6_catch_screen.dart';
 // import 'screens/7_catch_result_screen.dart';
 import 'screens/8_inventory_screen.dart';
+import 'screens/10_profile_screen.dart';
 import 'screens/3.1_mapbox_screen.dart';
 import 'screens/1_home_screen.dart';
 import 'screens/2_location_permission_screen.dart';
@@ -55,14 +57,15 @@ class CatchTheMascotApp extends StatelessWidget {
       ),
       initialRoute: Routes.home,
       routes: {
-        Routes.home: (context) => const HomeScreen(),
-        Routes.locationPermission:
-            (context) => const LocationPermissionScreen(),
+        Routes.home: (context) => const HomeScreen(), //login screen
+        Routes.register: (context) => const RegisterScreen(),
+        Routes.locationPermission: (context) => const LocationPermissionScreen(),
         // Routes.map: (context) => const MapScreen(),
         // Routes.verification: (context) => const VerificationScreen(),
         // Routes.verificationResult: (context) => const VerificationResultScreen(),
         // Routes.catchScreen: (context) => const CatchScreen(),
         // Routes.catchResult: (context) => const CatchResultScreen(),
+        Routes.profile: (context) => const ProfileScreen(),
         Routes.inventory: (context) => const InventoryScreen(),
         // Routes.caughtMascots: (context) => const CaughtMascotsScreen(),
         Routes.map: (context) => const CatchMascotMapboxScreen(),
