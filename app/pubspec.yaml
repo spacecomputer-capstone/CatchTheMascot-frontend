@@ -46,6 +46,8 @@ flutter:
     - lib/assets/icons/storke.png
     - assets/icons/
     - assets/player/player.glb
+    - assets/player/player-full.png
+    - assets/player/player-half.png
     - lib/assets/mascotimages/
     - lib/assets/3dmascots/
 

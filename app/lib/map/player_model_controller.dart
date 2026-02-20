@@ -29,7 +29,7 @@ class PlayerModelController {
 
       final layer = mb.ModelLayer(id: layerId, sourceId: sourceId)
         ..modelId = "asset://assets/player/player.glb"
-        ..modelScale = const [10.0, 10.0, 10.0]
+        ..modelScale = const [20.0, 20.0, 20.0]
         ..modelRotation = const [0.0, 0.0, 0.0]
         ..modelType = mb.ModelType.COMMON_3D;
 
