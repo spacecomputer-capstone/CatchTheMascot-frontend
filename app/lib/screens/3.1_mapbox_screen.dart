@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:http/http.dart' as http;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' as mb;
+// import 'package:app/apis/mascot_api.dart';
+// import 'package:app/models/mascot.dart';
 
 import '../map/map_ids.dart';
 import '../map/map_gestures.dart';
@@ -74,6 +76,7 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
   // Add more mascots here.
   final List<MascotTarget> _allMascots = [
     MascotTarget(
+      idnumber: 5,
       id: "storky",
       name: "Storky Tower",
       lat: MapIds.storkeLat,
@@ -243,9 +246,15 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
         lng: t.lng,
         onTap: () {
           if (!mounted) return;
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (_) => const MascotScreen()));
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder:
+                  (_) => MascotScreen(
+                    // _allMascots.indexOf(t),
+                    mascotId: t.idnumber ?? -1,
+                  ),
+            ),
+          );
         },
         modelScale: MapIds.mascotModelScale,
         modelHeightMeters: MapIds.mascotModelHeightMeters,
@@ -699,8 +708,8 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
                   },
                 ),
                 Positioned(
-                  bottom: 12,
-                  left: 210,
+                  bottom: 13,
+                  left: 230,
                   child: FloatingActionButton(
                     backgroundColor: const Color.fromRGBO(65, 64, 64, 1),
                     onPressed: () {
@@ -762,6 +771,7 @@ class _NearbyMascotCircle extends StatelessWidget {
 // Simple data models
 class MascotTarget {
   const MascotTarget({
+    this.idnumber,
     required this.id,
     required this.name,
     required this.lat,
@@ -770,6 +780,7 @@ class MascotTarget {
     required this.pngAssetPath,
   });
 
+  final int? idnumber;
   final String id;
   final String name;
   final double lat;

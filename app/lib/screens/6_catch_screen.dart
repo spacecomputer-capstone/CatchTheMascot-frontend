@@ -33,6 +33,7 @@ class _CatchScreenState extends State<CatchScreen>
 
   // Normalized positions (0–1) where the zone is considered a “catch”.
   // Middle 30% of the bar.
+  // TODO: adjust difficulty by rarity
   static const double _zoneStart = 0.35;
   static const double _zoneEnd = 0.65;
 
