@@ -32,7 +32,7 @@ import 'package:app/apis/user_api.dart';
 // import 'package:app/models/user.dart';
 import 'package:app/apis/mascot_api.dart';
 import 'package:app/models/mascot.dart';
-// import 'package:app/screens/8_inventory_screen.dart';
+import 'package:app/screens/helpers.dart';
 
 import '6_catch_screen.dart';
 
@@ -353,14 +353,17 @@ class _MascotScreenState extends State<MascotScreen>
 
   // -------------------- UI helpers --------------------
 
-  void _claimCoin() {
+  void claimCoin(int numCoins) {
     setState(() {
-      _coins += 1;
+      _coins += numCoins;
     });
-    updateUserCoins(username: username, coinsToAdd: 1); //add coin in backend
+    updateUserCoins(
+      username: username,
+      coinsToAdd: numCoins,
+    ); //add coin in backend
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('You found +1 Campus Coin! 💰'),
+      SnackBar(
+        content: Text('You found +$numCoins Campus Coins! 💰'),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -389,34 +392,6 @@ class _MascotScreenState extends State<MascotScreen>
     return Colors.white70;
   }
 
-  Color _rarityColor(double rarity) {
-    if (rarity < 0.2) {
-      return Colors.grey; // Common
-    } else if (rarity < 0.4) {
-      return Colors.green; // Uncommon
-    } else if (rarity < 0.6) {
-      return Colors.blue; // Rare
-    } else if (rarity < 0.8) {
-      return Colors.purple; // Epic
-    } else {
-      return Colors.orange; // Legendary
-    }
-  }
-
-  String rarityTier(double rarity) {
-    if (rarity < 0.2) {
-      return "Common";
-    } else if (rarity < 0.4) {
-      return "Uncommon";
-    } else if (rarity < 0.6) {
-      return "Rare";
-    } else if (rarity < 0.8) {
-      return "Epic";
-    } else {
-      return "Legendary";
-    }
-  }
-
   Future<void> _loadMascot() async {
     print("Loading mascot info for id ${widget.mascotId}...");
     final mascot = await getMascot(widget.mascotId);
@@ -426,52 +401,6 @@ class _MascotScreenState extends State<MascotScreen>
       _isLoading = false; // stop loading
     });
   }
-
-  //   @override
-  //   Widget build(BuildContext context) {
-  //     return Scaffold(
-  //       extendBodyBehindAppBar: true,
-  //       appBar: AppBar(
-  //         title: Text('$mascotName Encounter'),
-  //         backgroundColor: Colors.transparent,
-  //         elevation: 0,
-  //         centerTitle: true,
-  //       ),
-  //       body: Container(
-  //         decoration: const BoxDecoration(
-  //           gradient: LinearGradient(
-  //             colors: [
-  //               Color(0xFF050814),
-  //               Color(0xFF081A3A),
-  //               Color(0xFF233D7B),
-  //               Color(0xFF4263EB),
-  //             ],
-  //             begin: Alignment.topCenter,
-  //             end: Alignment.bottomCenter,
-  //           ),
-  //         ),
-  //         child: SafeArea(
-  //           child: Padding(
-  //             padding: const EdgeInsets.symmetric(
-  //               horizontal: 16.0,
-  //               vertical: 12.0,
-  //             ),
-  //             child: Column(
-  //               children: [
-  //                 _buildTopBar(),
-  //                 const SizedBox(height: 16),
-  //                 Expanded(child: _buildMascotCard()),
-  //                 const SizedBox(height: 16),
-  //                 _buildActionsRow(),
-  //                 const SizedBox(height: 16),
-  //                 _buildVerificationStatus(),
-  //               ],
-  //             ),
-  //           ),
-  //         ),
-  //       ),
-  //     );
-  //   }
 
   // getter functions
 
@@ -490,9 +419,9 @@ class _MascotScreenState extends State<MascotScreen>
 
   int get coinsToChallenge => _mascot?.coins ?? 2;
 
-  String get mascotTier => rarityTier(_mascot?.rarity ?? 0.5);
+  String get mascotTier => getRarityTier(_mascot?.rarity ?? 0.5);
 
-  Color get rarityColor => _rarityColor(_mascot?.rarity ?? 0.5);
+  Color get rarityColor => getRarityColor(_mascot?.rarity ?? 0.5);
 
   String get mascotImagePath =>
       "lib/assets/mascotimages/${widget.mascotId}_$mascotName.png";
@@ -774,7 +703,7 @@ class _MascotScreenState extends State<MascotScreen>
             onPressed: canChallenge ? _challengeMascot : null,
             icon: const Icon(Icons.sports_martial_arts),
             label: Text(
-              canChallenge ? 'Challenge' : 'Need $coinsToChallenge Coins',
+              canChallenge ? 'Challenge' : 'Need $coinsToChallenge Coin(s)',
             ),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
@@ -792,7 +721,7 @@ class _MascotScreenState extends State<MascotScreen>
         const SizedBox(width: 12),
         Expanded(
           child: OutlinedButton.icon(
-            onPressed: _isVerifying ? null : _claimCoin,
+            onPressed: _isVerifying ? null : () => claimCoin(1),
             icon: const Icon(Icons.monetization_on),
             label: const Text('Claim Coin (+1)'),
             style: OutlinedButton.styleFrom(

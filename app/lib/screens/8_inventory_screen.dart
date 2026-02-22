@@ -6,6 +6,7 @@ import 'package:app/apis/mascot_api.dart';
 import 'package:app/models/mascot.dart';
 import 'package:app/models/user.dart';
 import 'package:app/state/current_user.dart';
+import 'package:app/screens/helpers.dart';
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -66,20 +67,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Failed to load coins: $e')));
-    }
-  }
-
-  Color _rarityColor(double rarity) {
-    if (rarity < 0.2) {
-      return Colors.grey; // Common
-    } else if (rarity < 0.4) {
-      return Colors.green; // Uncommon
-    } else if (rarity < 0.6) {
-      return Colors.blue; // Rare
-    } else if (rarity < 0.8) {
-      return Colors.purple; // Epic
-    } else {
-      return Colors.orange; // Legendary
     }
   }
 
@@ -190,7 +177,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                     vertical: 2,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: _rarityColor(
+                                    color: getRarityColor(
                                       mascot.rarity,
                                     ).withOpacity(0.15),
                                     borderRadius: BorderRadius.circular(12),
@@ -198,7 +185,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                   child: Text(
                                     mascot.rarity.toString(),
                                     style: TextStyle(
-                                      color: _rarityColor(mascot.rarity),
+                                      color: getRarityColor(mascot.rarity),
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
                                     ),
