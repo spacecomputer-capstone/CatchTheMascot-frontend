@@ -24,10 +24,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:http/http.dart' as http;
 
+//to get current user info
+import 'package:app/state/current_user.dart';
+
+//user and mascot APIs
+import 'package:app/apis/user_api.dart';
+// import 'package:app/models/user.dart';
+import 'package:app/apis/mascot_api.dart';
+import 'package:app/models/mascot.dart';
+import 'package:app/screens/helpers.dart';
+
 import '6_catch_screen.dart';
 
 class MascotScreen extends StatefulWidget {
-  const MascotScreen({super.key});
+  //mascot information
+  final int mascotId;
+  final int piId;
+
+  const MascotScreen({super.key, required this.mascotId, required this.piId});
 
   @override
   State<MascotScreen> createState() => _MascotScreenState();
@@ -38,16 +52,19 @@ class _MascotScreenState extends State<MascotScreen>
   // Game state
   bool _isVerifying = false;
   String _verificationStatus = 'Tap "Challenge" to start!';
-  bool _hasCaughtMascot = false;
+  bool _hasCaughtMascot =
+      false; //TODO: check backend if user already caught this mascot
   bool _hasAttempted = false;
 
-  int _coins = 5;
+  //get user info
+  String username = CurrentUser.user?.username ?? "Player";
+  int _coins = CurrentUser.user?.coins ?? 0;
 
-  // Mascot meta
-  static const String _mascotName = 'Storky';
-  static const String _mascotLocation = 'UCSB Storke Tower';
-  static const String _mascotTier = 'Campus Legend • Tier S';
-  static const double _catchProbability = 0.65;
+  //get mascot info from mascot id: Future<Mascot?> getMascot(int mascotId, [BuildContext? context]) async
+  Mascot? _mascot;
+  bool _isLoading = true; //show loading spinner until mascot info is fetched
+  late final String _mascotLocation =
+      'UCSB Storke Tower'; //TODO: get from backend
 
   late final AnimationController _pulseController;
 
@@ -56,24 +73,24 @@ class _MascotScreenState extends State<MascotScreen>
   // For LAN testing:
   // static const String _apiBase = "http://172.20.10.7:5001";
 
-  static final Guid _serviceUuid =
-  Guid("eb5c86a4-733c-4d9d-aab2-285c2dab09a1");
-  static final Guid _idCharUuid =
-  Guid("eb5c86a4-733c-4d9d-aab2-285c2dab09a2");
-  static final Guid _signNonceUuid =
-  Guid("eb5c86a4-733c-4d9d-aab2-285c2dab09a3");
-  static final Guid _signRespUuid =
-  Guid("eb5c86a4-733c-4d9d-aab2-285c2dab09a4");
+  static final Guid _serviceUuid = Guid("eb5c86a4-733c-4d9d-aab2-285c2dab09a1");
+  static final Guid _idCharUuid = Guid("eb5c86a4-733c-4d9d-aab2-285c2dab09a2");
+  static final Guid _signNonceUuid = Guid(
+    "eb5c86a4-733c-4d9d-aab2-285c2dab09a3",
+  );
+  static final Guid _signRespUuid = Guid(
+    "eb5c86a4-733c-4d9d-aab2-285c2dab09a4",
+  );
 
   @override
   void initState() {
     super.initState();
+    _loadMascot();
+
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 1),
-      lowerBound: 0.95,
-      upperBound: 1.05,
-    )..repeat(reverse: true);
+    )..repeat(reverse: true); // makes it pulse
   }
 
   @override
@@ -85,7 +102,7 @@ class _MascotScreenState extends State<MascotScreen>
   Future<void> _challengeMascot() async {
     if (_isVerifying) return;
 
-    if (_coins < 2) {
+    if (_coins < coinsToChallenge) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Not enough coins to challenge!')),
       );
@@ -96,13 +113,18 @@ class _MascotScreenState extends State<MascotScreen>
       _isVerifying = true;
       _hasAttempted = true;
       _verificationStatus = 'Getting nonce…';
-      _coins -= 2;
+      _coins -= coinsToChallenge;
     });
+
+    //subtract coins in the backend
+    CurrentUser.user!.coins -= coinsToChallenge;
+    updateUser(CurrentUser.user!, context);
 
     BluetoothDevice? device;
     StreamSubscription<List<int>>? notifSub;
 
     try {
+      //DEBUGGING - SKIPPING LOCATION VERIFICATION----------------------------------
       // 1) GET nonce
       final nonceHex = await _fetchNonceHex();
       if (!mounted) return;
@@ -120,26 +142,29 @@ class _MascotScreenState extends State<MascotScreen>
         _verificationStatus = 'Verifying presence…';
       });
 
-      await device.connect(timeout: const Duration(seconds: 10), autoConnect: false);
+      await device.connect(
+        timeout: const Duration(seconds: 10),
+        autoConnect: false,
+      );
 
       final services = await device.discoverServices();
       final svc = services.firstWhere(
-            (s) => s.uuid == _serviceUuid,
+        (s) => s.uuid == _serviceUuid,
         orElse: () => throw Exception("Service not found on beacon"),
       );
 
       final idChar = svc.characteristics.firstWhere(
-            (c) => c.uuid == _idCharUuid,
+        (c) => c.uuid == _idCharUuid,
         orElse: () => throw Exception("ID characteristic not found"),
       );
 
       final signNonceChar = svc.characteristics.firstWhere(
-            (c) => c.uuid == _signNonceUuid,
+        (c) => c.uuid == _signNonceUuid,
         orElse: () => throw Exception("Nonce characteristic not found"),
       );
 
       final signRespChar = svc.characteristics.firstWhere(
-            (c) => c.uuid == _signRespUuid,
+        (c) => c.uuid == _signRespUuid,
         orElse: () => throw Exception("Response characteristic not found"),
       );
 
@@ -181,6 +206,8 @@ class _MascotScreenState extends State<MascotScreen>
         tsMs: tsMs.toString(),
         sigHex: sigHex,
       );
+      // --------------------------------------------------------
+      //   final ok = true; //DEBUGGING - SKIP VERIFICATION
 
       if (!mounted) return;
 
@@ -189,10 +216,41 @@ class _MascotScreenState extends State<MascotScreen>
           _verificationStatus = 'Presence verified — start catching!';
         });
 
+        print(
+          "Verification successful, navigating to Catch screen with mascotId ${widget.mascotId}...",
+        );
+
+        // give coins if visiting a new location
+        if (!CurrentUser.user!.visitedPis.contains(widget.piId)) {
+          claimCoin(
+            newLocationReward,
+            message: "New location visited! +$newLocationReward coins! 🎉",
+          );
+          CurrentUser.user!.visitedPis.add(widget.piId);
+          CurrentUser.user!.lastPiVisited = widget.piId;
+          await updateUser(CurrentUser.user!, context);
+        }
+
+        if (CurrentUser.user!.lastPiVisited != widget.piId) {
+          claimCoin(
+            changeLocationReward,
+            message:
+                "Different location visited! +$changeLocationReward coins! 🎉",
+          );
+          CurrentUser.user!.lastPiVisited = widget.piId;
+          await updateUser(CurrentUser.user!, context);
+        }
+
         final didCatch = await Navigator.push<bool>(
           context,
           MaterialPageRoute(
-            builder: (_) => const CatchScreen(mascotName: _mascotName),
+            builder:
+                (_) =>
+                    _isLoading || _mascot == null
+                        ? const Scaffold(
+                          body: Center(child: CircularProgressIndicator()),
+                        )
+                        : CatchScreen(mascot: _mascot!),
           ),
         );
 
@@ -204,11 +262,12 @@ class _MascotScreenState extends State<MascotScreen>
           final success = didCatch == true;
           _hasCaughtMascot = success;
 
-          _verificationStatus = success
-              ? '$_mascotName caught! 🎉'
-              : '$_mascotName escaped! 😭';
+          _verificationStatus =
+              success
+                  ? '$commonMascotName caught! 🎉'
+                  : '$commonMascotName escaped! 😭';
 
-          if (success) _coins += 3;
+          //   if (success) _coins += 3;
         });
       } else {
         setState(() {
@@ -335,13 +394,16 @@ class _MascotScreenState extends State<MascotScreen>
 
   // -------------------- UI helpers --------------------
 
-  void _claimCoin() {
+  void claimCoin(int numCoins, {String? message}) {
     setState(() {
-      _coins += 1;
+      _coins += numCoins;
     });
+    CurrentUser.user!.coins += numCoins;
+    updateUser(CurrentUser.user!, context);
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('You found +1 Campus Coin! 💰'),
+      SnackBar(
+        content: Text(message ?? 'You found +$numCoins Campus Coins! 💰'),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -370,12 +432,57 @@ class _MascotScreenState extends State<MascotScreen>
     return Colors.white70;
   }
 
+  Future<void> _loadMascot() async {
+    print("Loading mascot info for id ${widget.mascotId}...");
+    final mascot = await getMascot(widget.mascotId);
+
+    setState(() {
+      _mascot = mascot; // now this is the REAL mascot
+      _isLoading = false; // stop loading
+    });
+  }
+
+  // getter functions
+
+  String get mascotName => _mascot?.mascotName ?? "Unknown Mascot";
+
+  String get commonMascotName {
+    return mascotName
+        .replaceAll('_', ' ')
+        .split(' ')
+        .map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase())
+        .join(' ');
+  }
+
+  double get catchProbability => (1.0 - _mascot!.rarity);
+
+  int get coinsToChallenge => _mascot?.coins ?? 2;
+
+  String get mascotTier => getRarityTier(_mascot?.rarity ?? 0.5);
+
+  Color get rarityColor => getRarityColor(_mascot?.rarity ?? 0.5);
+
+  String get mascotImagePath =>
+      "lib/assets/mascotimages/${widget.mascotId}_$mascotName.png";
+
+  int get respawnRate =>
+      _mascot?.respawnTime ?? 120; // in minutes, default 2 hours
+
+  double get rarity => _mascot?.rarity ?? 0.5;
+
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (_mascot == null) {
+      return const Scaffold(body: Center(child: Text("Mascot not found")));
+    }
+
     return Scaffold(
-      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Storky Encounter'),
+        title: Text('$commonMascotName Encounter'),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
@@ -395,7 +502,10 @@ class _MascotScreenState extends State<MascotScreen>
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 12.0,
+            ),
             child: Column(
               children: [
                 _buildTopBar(),
@@ -442,10 +552,8 @@ class _MascotScreenState extends State<MascotScreen>
               const SizedBox(width: 4),
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 300),
-                transitionBuilder: (child, anim) => ScaleTransition(
-                  scale: anim,
-                  child: child,
-                ),
+                transitionBuilder:
+                    (child, anim) => ScaleTransition(scale: anim, child: child),
                 child: Text(
                   '$_coins',
                   key: ValueKey<int>(_coins),
@@ -475,27 +583,50 @@ class _MascotScreenState extends State<MascotScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _mascotName,
+                        commonMascotName,
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        _mascotTier,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Colors.black54,
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color:
+                              _isLoading
+                                  ? Colors.purple.withValues(alpha: 0.2)
+                                  : rarityColor.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          mascotTier,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color:
+                                _isLoading
+                                    ? Colors.purple.withValues(alpha: 0.2)
+                                    : rarityColor.withValues(alpha: 0.2),
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
-                    color: _hasCaughtMascot ? Colors.green.shade100 : Colors.orange.shade100,
+                    color:
+                        _hasCaughtMascot
+                            ? Colors.green.shade100
+                            : Colors.orange.shade100,
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Row(
@@ -503,7 +634,10 @@ class _MascotScreenState extends State<MascotScreen>
                       Icon(
                         _hasCaughtMascot ? Icons.check_circle : Icons.blur_on,
                         size: 18,
-                        color: _hasCaughtMascot ? Colors.green.shade800 : Colors.orange.shade800,
+                        color:
+                            _hasCaughtMascot
+                                ? Colors.green.shade800
+                                : Colors.orange.shade800,
                       ),
                       const SizedBox(width: 4),
                       Text(
@@ -511,7 +645,10 @@ class _MascotScreenState extends State<MascotScreen>
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: _hasCaughtMascot ? Colors.green.shade800 : Colors.orange.shade800,
+                          color:
+                              _hasCaughtMascot
+                                  ? Colors.green.shade800
+                                  : Colors.orange.shade800,
                         ),
                       ),
                     ],
@@ -539,39 +676,42 @@ class _MascotScreenState extends State<MascotScreen>
                           color: Colors.blue.shade200.withOpacity(0.5),
                           blurRadius: 30,
                           spreadRadius: 5,
-                        )
+                        ),
                       ],
                     ),
                   ),
                   Hero(
-                    tag: 'mascot-$_mascotName',
-                    child: _isVerifying
-                        ? ScaleTransition(
-                      scale: _pulseController,
-                      child: Image.asset(
-                        'assets/icons/storke-nobackground.png',
-                        fit: BoxFit.contain,
-                        height: 140,
-                      ),
-                    )
-                        : Image.asset(
-                      'assets/icons/storke-nobackground.png',
-                      fit: BoxFit.contain,
-                      height: 140,
-                    ),
+                    tag: 'mascot-$mascotName',
+                    child:
+                        _isVerifying
+                            ? ScaleTransition(
+                              scale: _pulseController,
+                              child: Image.asset(
+                                mascotImagePath,
+                                fit: BoxFit.contain,
+                                height: 140,
+                              ),
+                            )
+                            : Image.asset(
+                              mascotImagePath,
+                              fit: BoxFit.contain,
+                              height: 140,
+                            ),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 12),
             const Divider(height: 24),
-            _buildDetailRow('Location', _mascotLocation),
-            _buildDetailRow('Coins to Challenge', '2'),
-            _buildDetailRow('Respawn Rate', 'Every 2 hours'),
-            _buildDetailRow(
-              'Base Catch Odds',
-              '${(_catchProbability * 100).round()}%',
-            ),
+            if (!_isLoading) ...[
+              _buildDetailRow('Location', _mascotLocation),
+              _buildDetailRow('Coins to Challenge', '$coinsToChallenge'),
+              _buildDetailRow('Respawn Rate', 'Every $respawnRate minutes'),
+              _buildDetailRow(
+                'Base Catch Odds',
+                '${(catchProbability * 100).round()}%',
+              ),
+            ],
             const SizedBox(height: 8),
             Align(
               alignment: Alignment.centerLeft,
@@ -589,11 +729,9 @@ class _MascotScreenState extends State<MascotScreen>
               borderRadius: BorderRadius.circular(999),
               child: LinearProgressIndicator(
                 minHeight: 9,
-                value: 0.8,
+                value: rarity,
                 backgroundColor: Colors.grey.shade200,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  Colors.deepPurple.shade400,
-                ),
+                valueColor: AlwaysStoppedAnimation<Color>(rarityColor),
               ),
             ),
           ],
@@ -603,7 +741,9 @@ class _MascotScreenState extends State<MascotScreen>
   }
 
   Widget _buildActionsRow() {
-    final canChallenge = !_isVerifying && _coins >= 2;
+    final canChallenge =
+        !_isVerifying &&
+        _coins >= coinsToChallenge; //TODO: && !_hasCaughtMascot;
 
     return Row(
       children: [
@@ -611,12 +751,18 @@ class _MascotScreenState extends State<MascotScreen>
           child: ElevatedButton.icon(
             onPressed: canChallenge ? _challengeMascot : null,
             icon: const Icon(Icons.sports_martial_arts),
-            label: Text(canChallenge ? 'Challenge' : 'Need 2 Coins'),
+            label: Text(
+              canChallenge ? 'Challenge' : 'Need $coinsToChallenge Coin(s)',
+            ),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              backgroundColor: canChallenge ? const Color(0xFFFFC857) : Colors.grey,
-              foregroundColor: canChallenge ? Colors.black : Colors.grey.shade200,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              backgroundColor:
+                  canChallenge ? const Color(0xFFFFC857) : Colors.grey,
+              foregroundColor:
+                  canChallenge ? Colors.black : Colors.grey.shade200,
               elevation: canChallenge ? 4 : 0,
             ),
           ),
@@ -624,14 +770,16 @@ class _MascotScreenState extends State<MascotScreen>
         const SizedBox(width: 12),
         Expanded(
           child: OutlinedButton.icon(
-            onPressed: _isVerifying ? null : _claimCoin,
+            onPressed: _isVerifying ? null : () => claimCoin(1),
             icon: const Icon(Icons.monetization_on),
             label: const Text('Claim Coin (+1)'),
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.white,
               side: const BorderSide(color: Colors.white70),
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
             ),
           ),
         ),
@@ -674,7 +822,7 @@ class _MascotScreenState extends State<MascotScreen>
               style: TextStyle(color: _statusColor(), fontSize: 14),
               child: Text(
                 showHint
-                    ? 'Spend 2 Campus Coins to challenge $_mascotName. We’ll verify your presence, then you can try to catch it!'
+                    ? 'Spend $coinsToChallenge Campus Coin(s) to challenge $commonMascotName. We’ll verify your presence, then you can try to catch it!'
                     : _verificationStatus,
               ),
             ),
@@ -690,10 +838,17 @@ class _MascotScreenState extends State<MascotScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(width: 12),
           Flexible(
-            child: Text(value, style: const TextStyle(fontSize: 14), textAlign: TextAlign.right),
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 14),
+              textAlign: TextAlign.right,
+            ),
           ),
         ],
       ),

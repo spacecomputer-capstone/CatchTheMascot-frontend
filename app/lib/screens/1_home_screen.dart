@@ -3,6 +3,7 @@ import '../utils/routes.dart';
 import 'package:app/state/current_user.dart';
 import 'package:app/apis/user_api.dart';
 import 'dart:ui' as ui;
+import 'package:app/screens/helpers.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,12 +20,10 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController registerPasswordController =
       TextEditingController();
 
-  final TextEditingController loginUsernameController =
-      TextEditingController();
-  final TextEditingController loginPasswordController =
-      TextEditingController();
+  final TextEditingController loginUsernameController = TextEditingController();
+  final TextEditingController loginPasswordController = TextEditingController();
 
-  static bool debug = true;
+  // static bool debug = false;
 
   @override
   Widget build(BuildContext context) {
@@ -87,10 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         const Text(
                           'Become a Gaucho Trainer.',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.white70,
-                          ),
+                          style: TextStyle(fontSize: 14, color: Colors.white70),
                         ),
 
                         const SizedBox(height: 40),
@@ -138,16 +134,15 @@ class _HomeScreenState extends State<HomeScreen> {
     final password = registerPasswordController.text.trim();
 
     if (username.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Fill all fields")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Fill all fields")));
       return;
     }
 
     setState(() => isLoading = true);
 
-    final user =
-        await addUserAndReturnUser(username, password, context);
+    final user = await addUserAndReturnUser(username, password, context);
 
     setState(() => isLoading = false);
 
@@ -165,19 +160,32 @@ class _HomeScreenState extends State<HomeScreen> {
 
     setState(() => isLoading = true);
 
-    final user =
-        await loginUserAndReturnUser(username, password, context);
+    final user = await loginUserAndReturnUser(username, password, context);
 
     setState(() => isLoading = false);
 
     if (user != null) {
       CurrentUser.set(user);
-      Navigator.pushReplacementNamed(
-          context, Routes.locationPermission);
+
+      //check if the last check-in date is one day before today, if so award daily reward and update last check-in date
+      if (DateTime.now().difference(user.lastCheckInDate).inDays >= 1) {
+        user.coins += getdailyReward();
+        user.lastCheckInDate = DateTime.now();
+        await updateUser(user, context);
+
+        // Show a snackbar to inform the user about the daily reward
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Daily Check-in: +${getdailyReward()} coins!"),
+          ),
+        );
+      }
+
+      Navigator.pushReplacementNamed(context, Routes.locationPermission);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Invalid credentials")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Invalid credentials")));
     }
   }
 
@@ -216,10 +224,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(height: 18),
-          _themedTextField(
-            controller: usernameController,
-            label: "Username",
-          ),
+          _themedTextField(controller: usernameController, label: "Username"),
           const SizedBox(height: 14),
           _themedTextField(
             controller: passwordController,
