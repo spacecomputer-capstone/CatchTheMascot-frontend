@@ -1,3 +1,5 @@
+//TODO: hasn't been tested yet
+
 import 'package:app/models/pi.dart';
 import 'package:app/models/mascot.dart';
 import 'package:flutter/material.dart';
