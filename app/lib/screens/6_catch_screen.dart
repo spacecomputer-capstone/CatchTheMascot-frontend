@@ -68,8 +68,7 @@ class _CatchScreenState extends State<CatchScreen>
         .join(' ');
   }
 
-  double get catchProbability =>
-      widget.mascot.rarity = (1.0 - widget.mascot.rarity);
+  double get catchProbability => (1.0 - widget.mascot.rarity);
 
   int get coinsToChallenge => widget.mascot.coins;
 

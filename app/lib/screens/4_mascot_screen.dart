@@ -245,18 +245,12 @@ class _MascotScreenState extends State<MascotScreen>
           context,
           MaterialPageRoute(
             builder:
-                (_) => CatchScreen(
-                  mascot:
-                      _mascot ??
-                      Mascot(
-                        'Unknown',
-                        widget.mascotId,
-                        0.5,
-                        0,
-                        120,
-                        2,
-                      ), //pass the mascot object to the catch screen
-                ),
+                (_) =>
+                    _isLoading || _mascot == null
+                        ? const Scaffold(
+                          body: Center(child: CircularProgressIndicator()),
+                        )
+                        : CatchScreen(mascot: _mascot!),
           ),
         );
 
@@ -460,8 +454,7 @@ class _MascotScreenState extends State<MascotScreen>
         .join(' ');
   }
 
-  double get catchProbability =>
-      _mascot?.rarity != null ? (1.0 - _mascot!.rarity) : 0.5;
+  double get catchProbability => (1.0 - _mascot!.rarity);
 
   int get coinsToChallenge => _mascot?.coins ?? 2;
 
@@ -603,14 +596,20 @@ class _MascotScreenState extends State<MascotScreen>
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: rarityColor.withOpacity(0.2),
+                          color:
+                              _isLoading
+                                  ? Colors.purple.withValues(alpha: 0.2)
+                                  : rarityColor.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           mascotTier,
                           style: TextStyle(
                             fontSize: 13,
-                            color: rarityColor,
+                            color:
+                                _isLoading
+                                    ? Colors.purple.withValues(alpha: 0.2)
+                                    : rarityColor.withValues(alpha: 0.2),
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -704,13 +703,15 @@ class _MascotScreenState extends State<MascotScreen>
             ),
             const SizedBox(height: 12),
             const Divider(height: 24),
-            _buildDetailRow('Location', _mascotLocation),
-            _buildDetailRow('Coins to Challenge', '$coinsToChallenge'),
-            _buildDetailRow('Respawn Rate', 'Every $respawnRate minutes'),
-            _buildDetailRow(
-              'Base Catch Odds',
-              '${(catchProbability * 100).round()}%',
-            ),
+            if (!_isLoading) ...[
+              _buildDetailRow('Location', _mascotLocation),
+              _buildDetailRow('Coins to Challenge', '$coinsToChallenge'),
+              _buildDetailRow('Respawn Rate', 'Every $respawnRate minutes'),
+              _buildDetailRow(
+                'Base Catch Odds',
+                '${(catchProbability * 100).round()}%',
+              ),
+            ],
             const SizedBox(height: 8),
             Align(
               alignment: Alignment.centerLeft,
