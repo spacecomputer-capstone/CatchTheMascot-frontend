@@ -211,7 +211,19 @@ class _MascotScreenState extends State<MascotScreen>
         final didCatch = await Navigator.push<bool>(
           context,
           MaterialPageRoute(
-            builder: (_) => CatchScreen(mascotName: mascotName),
+            builder:
+                (_) => CatchScreen(
+                  mascot:
+                      _mascot ??
+                      Mascot(
+                        'Unknown',
+                        widget.mascotId,
+                        0.5,
+                        0,
+                        120,
+                        2,
+                      ), //pass the mascot object to the catch screen
+                ),
           ),
         );
 
@@ -415,7 +427,7 @@ class _MascotScreenState extends State<MascotScreen>
   }
 
   double get catchProbability =>
-      _mascot?.rarity != null ? (1.0 - _mascot!.rarity!) : 0.5;
+      _mascot?.rarity != null ? (1.0 - _mascot!.rarity) : 0.5;
 
   int get coinsToChallenge => _mascot?.coins ?? 2;
 
@@ -441,7 +453,7 @@ class _MascotScreenState extends State<MascotScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('$mascotName Encounter'),
+        title: Text('$commonMascotName Encounter'),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,

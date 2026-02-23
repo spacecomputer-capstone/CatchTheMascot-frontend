@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 
+//less rarity -> more common
 Color getRarityColor(double rarity) {
   if (rarity < 0.2) {
     return Colors.grey; // Common

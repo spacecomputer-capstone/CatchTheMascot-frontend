@@ -76,7 +76,8 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
   // Add more mascots here.
   final List<MascotTarget> _allMascots = [
     MascotTarget(
-      idnumber: 5,
+      idnumber:
+          5, //@sanil - change this to the actual mascot id, used in the mascot screen
       id: "storky",
       name: "Storky Tower",
       lat: MapIds.storkeLat,
