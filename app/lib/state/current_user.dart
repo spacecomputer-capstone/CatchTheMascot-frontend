@@ -8,8 +8,7 @@ class CurrentUser {
   static bool get isLoggedIn => user != null;
 
   // Use SAME databaseId as CatchScreen
-  static final FirebaseFirestore _firestore =
-      FirebaseFirestore.instanceFor(
+  static final FirebaseFirestore _firestore = FirebaseFirestore.instanceFor(
     app: Firebase.app(),
     databaseId: 'mascot-database',
   );
@@ -35,8 +34,7 @@ class CurrentUser {
     if (username == null || user != null) return;
 
     try {
-      final doc =
-          await _firestore.collection('users').doc(username).get();
+      final doc = await _firestore.collection('users').doc(username).get();
 
       if (!doc.exists) {
         await clear();
@@ -52,6 +50,10 @@ class CurrentUser {
         List<int>.from(data['uncaughtMascots'] ?? []),
         List<int>.from(data['visitedPis'] ?? []),
         data['coins'] ?? 0,
+        data['lastPiVisited'] ?? 0,
+        DateTime.parse(
+          data['lastCheckInDate'] ?? DateTime.now().toIso8601String(),
+        ),
       );
     } catch (e) {
       await clear();

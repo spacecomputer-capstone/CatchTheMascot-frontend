@@ -3,6 +3,21 @@
 
 import 'package:flutter/material.dart';
 
+//define the game constants here so they can be easily tweaked and accessed across the app
+int getdailyReward() => 5; //number of coins awarded for daily check-in
+int get startingCoins => 5; //number of coins new users start with
+int get changeLocationReward =>
+    2; //number of coins awarded for visiting a different location
+int get newLocationReward =>
+    6; //number of coins awarded for visiting a location for the first time
+
+// int dailyReward = 5; //number of coins awarded for daily check-in
+// int startingCoins = 5; //number of coins new users start with
+// int changeLocationReward =
+//     2; //number of coins awarded for visiting a different location
+// int newLocationReward =
+//     3; //number of coins awarded for visiting a location for the first time
+
 //less rarity -> more common
 Color getRarityColor(double rarity) {
   if (rarity < 0.2) {

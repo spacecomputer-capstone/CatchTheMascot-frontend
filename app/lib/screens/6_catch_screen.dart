@@ -43,11 +43,11 @@ class _CatchScreenState extends State<CatchScreen>
     double halfzone = 0.5 * catchProbability;
     _zoneStart = 0.5 - halfzone;
     _zoneEnd = 0.5 + halfzone;
-    print(
-      'Catch zone: ${(_zoneStart * 100).toStringAsFixed(1)}% - ${(_zoneEnd * 100).toStringAsFixed(1)}%',
-    );
-    print('Catch probability: ${(catchProbability * 100).toStringAsFixed(1)}%');
-    print('halfzone: ${(halfzone * 100).toStringAsFixed(1)}%');
+    // print(
+    //   'Catch zone: ${(_zoneStart * 100).toStringAsFixed(1)}% - ${(_zoneEnd * 100).toStringAsFixed(1)}%',
+    // );
+    // print('Catch probability: ${(catchProbability * 100).toStringAsFixed(1)}%');
+    // print('halfzone: ${(halfzone * 100).toStringAsFixed(1)}%');
   }
 
   @override
@@ -211,7 +211,7 @@ class _CatchScreenState extends State<CatchScreen>
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Text('Catch $commonMascotName'),
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         elevation: 0,
       ),
       body: Container(

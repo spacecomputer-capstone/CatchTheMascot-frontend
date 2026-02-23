@@ -77,7 +77,9 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
   final List<MascotTarget> _allMascots = [
     MascotTarget(
       idnumber:
-          5, //@sanil - change this to the actual mascot id, used in the mascot screen
+          9, //TODO: @sanil - change this to the actual mascot id, used in the mascot screen
+      piId:
+          3, //TODO: @sanil - change this to the actual piId that this mascot belongs to
       id: "storky",
       name: "Storky Tower",
       lat: MapIds.storkeLat,
@@ -253,6 +255,7 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
                   (_) => MascotScreen(
                     // _allMascots.indexOf(t),
                     mascotId: t.idnumber ?? -1,
+                    piId: t.piId ?? -1,
                   ),
             ),
           );
@@ -773,6 +776,7 @@ class _NearbyMascotCircle extends StatelessWidget {
 class MascotTarget {
   const MascotTarget({
     this.idnumber,
+    this.piId,
     required this.id,
     required this.name,
     required this.lat,
@@ -782,6 +786,7 @@ class MascotTarget {
   });
 
   final int? idnumber;
+  final int? piId;
   final String id;
   final String name;
   final double lat;

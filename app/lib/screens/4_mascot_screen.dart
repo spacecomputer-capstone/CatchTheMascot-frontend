@@ -39,8 +39,9 @@ import '6_catch_screen.dart';
 class MascotScreen extends StatefulWidget {
   //mascot information
   final int mascotId;
+  final int piId;
 
-  const MascotScreen({super.key, required this.mascotId});
+  const MascotScreen({super.key, required this.mascotId, required this.piId});
 
   @override
   State<MascotScreen> createState() => _MascotScreenState();
@@ -85,6 +86,11 @@ class _MascotScreenState extends State<MascotScreen>
   void initState() {
     super.initState();
     _loadMascot();
+
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    )..repeat(reverse: true); // makes it pulse
   }
 
   @override
@@ -110,94 +116,96 @@ class _MascotScreenState extends State<MascotScreen>
       _coins -= coinsToChallenge;
     });
 
-    updateUserCoins(
-      username: username,
-      coinsToAdd: -(coinsToChallenge),
-    ); //subtract coins in backend
+    //subtract coins in the backend
+    CurrentUser.user!.coins -= coinsToChallenge;
+    updateUser(CurrentUser.user!, context);
 
     BluetoothDevice? device;
     StreamSubscription<List<int>>? notifSub;
 
     try {
       //DEBUGGING - SKIPPING LOCATION VERIFICATION----------------------------------
-      // // 1) GET nonce
-      // final nonceHex = await _fetchNonceHex();
-      // if (!mounted) return;
+      //   // 1) GET nonce
+      //   final nonceHex = await _fetchNonceHex();
+      //   if (!mounted) return;
 
-      // setState(() {
-      //   _verificationStatus = 'Connecting to beacon…';
-      // });
+      //   setState(() {
+      //     _verificationStatus = 'Connecting to beacon…';
+      //   });
 
-      // // 2) Scan for device advertising our service UUID
-      // device = await _scanForBeacon(_serviceUuid);
-      // if (!mounted) return;
+      //   // 2) Scan for device advertising our service UUID
+      //   device = await _scanForBeacon(_serviceUuid);
+      //   if (!mounted) return;
 
-      // // 3) Connect + discover characteristics
-      // setState(() {
-      //   _verificationStatus = 'Verifying presence…';
-      // });
+      //   // 3) Connect + discover characteristics
+      //   setState(() {
+      //     _verificationStatus = 'Verifying presence…';
+      //   });
 
-      // await device.connect(timeout: const Duration(seconds: 10), autoConnect: false);
+      //   await device.connect(
+      //     timeout: const Duration(seconds: 10),
+      //     autoConnect: false,
+      //   );
 
-      // final services = await device.discoverServices();
-      // final svc = services.firstWhere(
-      //       (s) => s.uuid == _serviceUuid,
-      //   orElse: () => throw Exception("Service not found on beacon"),
-      // );
+      //   final services = await device.discoverServices();
+      //   final svc = services.firstWhere(
+      //     (s) => s.uuid == _serviceUuid,
+      //     orElse: () => throw Exception("Service not found on beacon"),
+      //   );
 
-      // final idChar = svc.characteristics.firstWhere(
-      //       (c) => c.uuid == _idCharUuid,
-      //   orElse: () => throw Exception("ID characteristic not found"),
-      // );
+      //   final idChar = svc.characteristics.firstWhere(
+      //     (c) => c.uuid == _idCharUuid,
+      //     orElse: () => throw Exception("ID characteristic not found"),
+      //   );
 
-      // final signNonceChar = svc.characteristics.firstWhere(
-      //       (c) => c.uuid == _signNonceUuid,
-      //   orElse: () => throw Exception("Nonce characteristic not found"),
-      // );
+      //   final signNonceChar = svc.characteristics.firstWhere(
+      //     (c) => c.uuid == _signNonceUuid,
+      //     orElse: () => throw Exception("Nonce characteristic not found"),
+      //   );
 
-      // final signRespChar = svc.characteristics.firstWhere(
-      //       (c) => c.uuid == _signRespUuid,
-      //   orElse: () => throw Exception("Response characteristic not found"),
-      // );
+      //   final signRespChar = svc.characteristics.firstWhere(
+      //     (c) => c.uuid == _signRespUuid,
+      //     orElse: () => throw Exception("Response characteristic not found"),
+      //   );
 
-      // // 4) Read beaconId
-      // final idBytes = await idChar.read();
-      // final beaconIdHex = _bytesToHex(idBytes).toLowerCase();
+      //   // 4) Read beaconId
+      //   final idBytes = await idChar.read();
+      //   final beaconIdHex = _bytesToHex(idBytes).toLowerCase();
 
-      // // 5) Subscribe to notify (wait for exactly 72 bytes)
-      // await signRespChar.setNotifyValue(true);
+      //   // 5) Subscribe to notify (wait for exactly 72 bytes)
+      //   await signRespChar.setNotifyValue(true);
 
-      // final completer = Completer<Uint8List>();
-      // notifSub = signRespChar.onValueReceived.listen((value) {
-      //   final raw = Uint8List.fromList(value);
-      //   if (raw.length == 72 && !completer.isCompleted) {
-      //     completer.complete(raw);
-      //   }
-      // });
+      //   final completer = Completer<Uint8List>();
+      //   notifSub = signRespChar.onValueReceived.listen((value) {
+      //     final raw = Uint8List.fromList(value);
+      //     if (raw.length == 72 && !completer.isCompleted) {
+      //       completer.complete(raw);
+      //     }
+      //   });
 
-      // // 6) Write nonce (16 bytes) without response
-      // final nonceBytes = _hexToBytes(nonceHex);
-      // await signNonceChar.write(nonceBytes, withoutResponse: true);
+      //   // 6) Write nonce (16 bytes) without response
+      //   final nonceBytes = _hexToBytes(nonceHex);
+      //   await signNonceChar.write(nonceBytes, withoutResponse: true);
 
-      // // 7) Wait for notify
-      // final raw = await completer.future.timeout(
-      //   const Duration(seconds: 6),
-      //   onTimeout: () => throw Exception("Verification timed out"),
-      // );
+      //   // 7) Wait for notify
+      //   final raw = await completer.future.timeout(
+      //     const Duration(seconds: 6),
+      //     onTimeout: () => throw Exception("Verification timed out"),
+      //   );
 
-      // // Parse notify: ts(8) || sig(64)
-      // final tsBytes = raw.sublist(0, 8);
-      // final sigBytes = raw.sublist(8);
-      // final tsMs = _be64ToMs(tsBytes);
-      // final sigHex = _bytesToHex(sigBytes).toLowerCase();
+      //   // Parse notify: ts(8) || sig(64)
+      //   final tsBytes = raw.sublist(0, 8);
+      //   final sigBytes = raw.sublist(8);
+      //   final tsMs = _be64ToMs(tsBytes);
+      //   final sigHex = _bytesToHex(sigBytes).toLowerCase();
 
-      // // 8) POST verify
-      // final ok = await _postVerify(
-      //   beaconIdHex: beaconIdHex,
-      //   nonceHex: nonceHex,
-      //   tsMs: tsMs.toString(),
-      //   sigHex: sigHex,
-      // );
+      //   // 8) POST verify
+      //   final ok = await _postVerify(
+      //     beaconIdHex: beaconIdHex,
+      //     nonceHex: nonceHex,
+      //     tsMs: tsMs.toString(),
+      //     sigHex: sigHex,
+      //   );
       // --------------------------------------------------------
       final ok = true; //DEBUGGING - SKIP VERIFICATION
 
@@ -207,6 +215,31 @@ class _MascotScreenState extends State<MascotScreen>
         setState(() {
           _verificationStatus = 'Presence verified — start catching!';
         });
+
+        print(
+          "Verification successful, navigating to Catch screen with mascotId ${widget.mascotId}...",
+        );
+
+        // give coins if visiting a new location
+        if (!CurrentUser.user!.visitedPis.contains(widget.piId)) {
+          claimCoin(
+            newLocationReward,
+            message: "New location visited! +$newLocationReward coins! 🎉",
+          );
+          CurrentUser.user!.visitedPis.add(widget.piId);
+          CurrentUser.user!.lastPiVisited = widget.piId;
+          await updateUser(CurrentUser.user!, context);
+        }
+
+        if (CurrentUser.user!.lastPiVisited != widget.piId) {
+          claimCoin(
+            changeLocationReward,
+            message:
+                "Different location visited! +$changeLocationReward coins! 🎉",
+          );
+          CurrentUser.user!.lastPiVisited = widget.piId;
+          await updateUser(CurrentUser.user!, context);
+        }
 
         final didCatch = await Navigator.push<bool>(
           context,
@@ -236,7 +269,9 @@ class _MascotScreenState extends State<MascotScreen>
           _hasCaughtMascot = success;
 
           _verificationStatus =
-              success ? '$mascotName caught! 🎉' : '$mascotName escaped! 😭';
+              success
+                  ? '$commonMascotName caught! 🎉'
+                  : '$commonMascotName escaped! 😭';
 
           //   if (success) _coins += 3;
         });
@@ -365,17 +400,16 @@ class _MascotScreenState extends State<MascotScreen>
 
   // -------------------- UI helpers --------------------
 
-  void claimCoin(int numCoins) {
+  void claimCoin(int numCoins, {String? message}) {
     setState(() {
       _coins += numCoins;
     });
-    updateUserCoins(
-      username: username,
-      coinsToAdd: numCoins,
-    ); //add coin in backend
+    CurrentUser.user!.coins += numCoins;
+    updateUser(CurrentUser.user!, context);
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('You found +$numCoins Campus Coins! 💰'),
+        content: Text(message ?? 'You found +$numCoins Campus Coins! 💰'),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -440,6 +474,8 @@ class _MascotScreenState extends State<MascotScreen>
 
   int get respawnRate =>
       _mascot?.respawnTime ?? 120; // in minutes, default 2 hours
+
+  double get rarity => _mascot?.rarity ?? 0.5;
 
   @override
   Widget build(BuildContext context) {
@@ -692,7 +728,7 @@ class _MascotScreenState extends State<MascotScreen>
               borderRadius: BorderRadius.circular(999),
               child: LinearProgressIndicator(
                 minHeight: 9,
-                value: catchProbability,
+                value: rarity,
                 backgroundColor: Colors.grey.shade200,
                 valueColor: AlwaysStoppedAnimation<Color>(rarityColor),
               ),
