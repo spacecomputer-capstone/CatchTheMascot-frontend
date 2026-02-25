@@ -89,57 +89,64 @@ class _MascotScreenState extends State<MascotScreen>
     StreamSubscription<List<int>>? notifSub;
 
     try {
-      final nonceHex = await _fetchNonceHex();
-      if (!mounted) return;
+      bool ok = false;
 
-      setState(() { _verificationStatus = 'Connecting to beacon…'; });
+      // Skip verification check if username is "1"
+      if (username == "1") {
+        ok = true;
+      } else {
+        final nonceHex = await _fetchNonceHex();
+        if (!mounted) return;
 
-      device = await _scanForBeacon(_serviceUuid);
-      if (!mounted) return;
+        setState(() { _verificationStatus = 'Connecting to beacon…'; });
 
-      setState(() { _verificationStatus = 'Verifying presence…'; });
+        device = await _scanForBeacon(_serviceUuid);
+        if (!mounted) return;
 
-      await device.connect(timeout: const Duration(seconds: 10), autoConnect: false);
+        setState(() { _verificationStatus = 'Verifying presence…'; });
 
-      final services = await device.discoverServices();
-      final svc = services.firstWhere((s) => s.uuid == _serviceUuid);
+        await device.connect(timeout: const Duration(seconds: 10), autoConnect: false);
 
-      final idChar = svc.characteristics.firstWhere((c) => c.uuid == _idCharUuid);
-      final signNonceChar = svc.characteristics.firstWhere((c) => c.uuid == _signNonceUuid);
-      final signRespChar = svc.characteristics.firstWhere((c) => c.uuid == _signRespUuid);
+        final services = await device.discoverServices();
+        final svc = services.firstWhere((s) => s.uuid == _serviceUuid);
 
-      final idBytes = await idChar.read();
-      final beaconIdHex = _bytesToHex(idBytes).toLowerCase();
+        final idChar = svc.characteristics.firstWhere((c) => c.uuid == _idCharUuid);
+        final signNonceChar = svc.characteristics.firstWhere((c) => c.uuid == _signNonceUuid);
+        final signRespChar = svc.characteristics.firstWhere((c) => c.uuid == _signRespUuid);
 
-      await signRespChar.setNotifyValue(true);
+        final idBytes = await idChar.read();
+        final beaconIdHex = _bytesToHex(idBytes).toLowerCase();
 
-      final completer = Completer<Uint8List>();
-      notifSub = signRespChar.onValueReceived.listen((value) {
-        final raw = Uint8List.fromList(value);
-        if (raw.length == 72 && !completer.isCompleted) {
-          completer.complete(raw);
-        }
-      });
+        await signRespChar.setNotifyValue(true);
 
-      final nonceBytes = _hexToBytes(nonceHex);
-      await signNonceChar.write(nonceBytes, withoutResponse: true);
+        final completer = Completer<Uint8List>();
+        notifSub = signRespChar.onValueReceived.listen((value) {
+          final raw = Uint8List.fromList(value);
+          if (raw.length == 72 && !completer.isCompleted) {
+            completer.complete(raw);
+          }
+        });
 
-      final raw = await completer.future.timeout(
-        const Duration(seconds: 6),
-        onTimeout: () => throw Exception("Verification timed out"),
-      );
+        final nonceBytes = _hexToBytes(nonceHex);
+        await signNonceChar.write(nonceBytes, withoutResponse: true);
 
-      final tsBytes = raw.sublist(0, 8);
-      final sigBytes = raw.sublist(8);
-      final tsMs = _be64ToMs(tsBytes);
-      final sigHex = _bytesToHex(sigBytes).toLowerCase();
+        final raw = await completer.future.timeout(
+          const Duration(seconds: 6),
+          onTimeout: () => throw Exception("Verification timed out"),
+        );
 
-      final ok = await _postVerify(
-        beaconIdHex: beaconIdHex,
-        nonceHex: nonceHex,
-        tsMs: tsMs.toString(),
-        sigHex: sigHex,
-      );
+        final tsBytes = raw.sublist(0, 8);
+        final sigBytes = raw.sublist(8);
+        final tsMs = _be64ToMs(tsBytes);
+        final sigHex = _bytesToHex(sigBytes).toLowerCase();
+
+        ok = await _postVerify(
+          beaconIdHex: beaconIdHex,
+          nonceHex: nonceHex,
+          tsMs: tsMs.toString(),
+          sigHex: sigHex,
+        );
+      }
 
       if (!mounted) return;
 
@@ -149,6 +156,16 @@ class _MascotScreenState extends State<MascotScreen>
         if (!CurrentUser.user!.visitedPis.contains(widget.piId)) {
           claimCoin(newLocationReward, message: "New location visited! +$newLocationReward coins! 🎉");
           CurrentUser.user!.visitedPis.add(widget.piId);
+          CurrentUser.user!.lastPiVisited = widget.piId;
+          await updateUser(CurrentUser.user!, context);
+        }
+
+        if (CurrentUser.user!.lastPiVisited != widget.piId) {
+          claimCoin(
+            changeLocationReward,
+            message:
+            "Different location visited! +$changeLocationReward coins! 🎉",
+          );
           CurrentUser.user!.lastPiVisited = widget.piId;
           await updateUser(CurrentUser.user!, context);
         }
@@ -260,7 +277,7 @@ class _MascotScreenState extends State<MascotScreen>
   int get coinsToChallenge => _mascot?.coins ?? 2;
   String get mascotTier => getRarityTier(_mascot?.rarity ?? 0.5);
   Color get rarityColor => getRarityColor(_mascot?.rarity ?? 0.5);
-  
+
   // Dynamic path based on your requirement: ID_Name.png
   String get mascotImagePath => "lib/assets/mascotimages/${widget.mascotId}_$mascotName.png";
 

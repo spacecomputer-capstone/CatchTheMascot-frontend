@@ -61,20 +61,20 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
     MascotTarget(
       idnumber: 5,
       piId: 2,
-      id: "storkie_5",
+      id: "storkie_tower",
       name: "Storkie",
       lat: MapIds.storkeLat,
-      lng: MapIds.storkeLng - 0.00010,
+      lng: MapIds.storkeLng + 0.00010,
       glbAssetPath: 'lib/assets/3dmascots/5_storkie.glb',
       pngAssetPath: 'lib/assets/mascotimages/5_storkie.png',
     ),
     MascotTarget(
       idnumber: 1,
-      piId: 2,
-      id: "raccoon_1",
+      piId: 3,
+      id: "raccoon_henley",
       name: "Raccoon",
-      lat: MapIds.storkeLat,
-      lng: MapIds.storkeLng + 0.00010,
+      lat: 34.41687562912479,
+      lng: -119.8444312386711,
       glbAssetPath: 'lib/assets/3dmascots/1_raccoon.glb',
       pngAssetPath: 'lib/assets/mascotimages/1_raccoon.png',
     ),
@@ -376,20 +376,22 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
                               final mascot = _mascotData[item.target.idnumber];
                               final displayName = mascot?.mascotName ?? item.target.name;
 
-                              return GestureDetector(
-                                onTap: () async {
-                                  final newId = isFollowing ? null : item.target.id;
-                                  setState(() {
-                                    _activeMascotId = newId;
-                                  });
-                                  setDialogState(() {});
-                                  await _updateSelectedRoutes();
+                              Future<void> toggleTracking() async {
+                                final newId = isFollowing ? null : item.target.id;
+                                setState(() {
+                                  _activeMascotId = newId;
+                                });
+                                setDialogState(() {});
+                                await _updateSelectedRoutes();
 
-                                  // Update glow on markers
-                                  for (var m in _mascotMarkers) {
-                                    await m.setGlow(m.id == _activeMascotId);
-                                  }
-                                },
+                                // Update glow on markers
+                                for (var m in _mascotMarkers) {
+                                  await m.setGlow(m.id == _activeMascotId);
+                                }
+                              }
+
+                              return GestureDetector(
+                                onTap: toggleTracking,
                                 child: Container(
                                   width: 120,
                                   margin: const EdgeInsets.only(right: 12),
@@ -424,32 +426,25 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
                                       Text(_formatDistance(item.distanceM),
                                           style: const TextStyle(color: Colors.white70, fontSize: 10)),
                                       const SizedBox(height: 4),
-                                      // Challenge/Catch Button
+                                      // Track Button
                                       Padding(
                                         padding: const EdgeInsets.symmetric(horizontal: 8.0),
                                         child: SizedBox(
                                           width: double.infinity,
                                           height: 28,
                                           child: ElevatedButton(
-                                            onPressed: () {
-                                              Navigator.pop(ctx);
-                                              Navigator.of(context).push(
-                                                MaterialPageRoute(
-                                                  builder: (_) => MascotScreen(
-                                                    mascotId: item.target.idnumber!,
-                                                    piId: item.target.piId ?? -1,
-                                                  ),
-                                                ),
-                                              );
-                                            },
+                                            onPressed: toggleTracking,
                                             style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.blue,
+                                              backgroundColor: isFollowing ? Colors.blueGrey : Colors.blue,
                                               padding: EdgeInsets.zero,
                                               shape: RoundedRectangleBorder(
                                                 borderRadius: BorderRadius.circular(8),
                                               ),
                                             ),
-                                            child: const Text("Catch", style: TextStyle(fontSize: 10, color: Colors.white)),
+                                            child: Text(
+                                              isFollowing ? "Untrack" : "Track",
+                                              style: const TextStyle(fontSize: 10, color: Colors.white),
+                                            ),
                                           ),
                                         ),
                                       ),
