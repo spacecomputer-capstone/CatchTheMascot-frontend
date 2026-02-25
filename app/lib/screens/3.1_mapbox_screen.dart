@@ -22,6 +22,8 @@ import '4_mascot_screen.dart';
 import 'package:app/state/current_user.dart';
 import 'package:app/utils/routes.dart';
 import '8_inventory_screen.dart';
+import 'package:app/apis/mascot_api.dart';
+import 'package:app/models/mascot.dart';
 
 class CatchMascotMapboxScreen extends StatefulWidget {
   const CatchMascotMapboxScreen({super.key});
@@ -51,26 +53,30 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
   PlayerModelController? _playerModel;
 
   final List<MascotAnnotations> _mascotMarkers = [];
+  
+  // Storage for fetched mascot data to keep names consistent
+  final Map<int, Mascot> _mascotData = {};
+
   final List<MascotTarget> _allMascots = [
     MascotTarget(
-      idnumber: 10,
+      idnumber: 5,
       piId: 2,
-      id: "storky_left",
-      name: "Storky Left",
+      id: "storkie_5",
+      name: "Storkie",
       lat: MapIds.storkeLat,
-      lng: MapIds.storkeLng - 0.00015,
-      glbAssetPath: MapIds.fixedMascotGlbAsset,
-      pngAssetPath: MapIds.fixedMascotImageAsset,
+      lng: MapIds.storkeLng - 0.00010,
+      glbAssetPath: 'lib/assets/3dmascots/5_storkie.glb',
+      pngAssetPath: 'lib/assets/mascotimages/5_storkie.png',
     ),
     MascotTarget(
-      idnumber: 11,
+      idnumber: 1,
       piId: 2,
-      id: "storky_right",
-      name: "Storky Right",
+      id: "raccoon_1",
+      name: "Raccoon",
       lat: MapIds.storkeLat,
-      lng: MapIds.storkeLng + 0.00015,
-      glbAssetPath: MapIds.raccoonGlbAsset,
-      pngAssetPath: MapIds.fixedMascotImageAsset,
+      lng: MapIds.storkeLng + 0.00010,
+      glbAssetPath: 'lib/assets/3dmascots/1_raccoon.glb',
+      pngAssetPath: 'lib/assets/mascotimages/1_raccoon.png',
     ),
   ];
 
@@ -90,6 +96,7 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
   @override
   void initState() {
     super.initState();
+    _loadMascotData();
 
     _player = Player(
       onPosition: (pos) async {
@@ -155,6 +162,19 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
     );
 
     _player.init();
+  }
+
+  Future<void> _loadMascotData() async {
+    for (var target in _allMascots) {
+      if (target.idnumber != null) {
+        final data = await getMascot(target.idnumber!);
+        if (data != null) {
+          setState(() {
+            _mascotData[target.idnumber!] = data;
+          });
+        }
+      }
+    }
   }
 
   Future<void> _onMapCreated(mb.MapboxMap map) async {
@@ -346,13 +366,15 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
                         )
                       else
                         SizedBox(
-                          height: 160,
+                          height: 180,
                           child: ListView.builder(
                             scrollDirection: Axis.horizontal,
                             itemCount: _nearbyMascots.length,
                             itemBuilder: (context, index) {
                               final item = _nearbyMascots[index];
                               final isFollowing = _activeMascotId == item.target.id;
+                              final mascot = _mascotData[item.target.idnumber];
+                              final displayName = mascot?.mascotName ?? item.target.name;
 
                               return GestureDetector(
                                 onTap: () async {
@@ -369,7 +391,7 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
                                   }
                                 },
                                 child: Container(
-                                  width: 110,
+                                  width: 120,
                                   margin: const EdgeInsets.only(right: 12),
                                   decoration: BoxDecoration(
                                     color: isFollowing ? Colors.blue.withOpacity(0.2) : Colors.white.withOpacity(0.05),
@@ -384,7 +406,7 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
                                         child: Padding(
                                           padding: const EdgeInsets.all(8.0),
                                           child: Image.asset(
-                                            "lib/assets/mascotimages/${item.target.idnumber}_${item.target.name.split(' ').last}.png",
+                                            item.target.pngAssetPath,
                                             errorBuilder: (context, error, stackTrace) =>
                                                 const Icon(Icons.pets, color: Colors.white70, size: 40),
                                           ),
@@ -392,7 +414,7 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
                                       ),
                                       Padding(
                                         padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                                        child: Text(item.target.name,
+                                        child: Text(displayName,
                                             style: const TextStyle(
                                                 color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                                             textAlign: TextAlign.center,
@@ -401,6 +423,36 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
                                       ),
                                       Text(_formatDistance(item.distanceM),
                                           style: const TextStyle(color: Colors.white70, fontSize: 10)),
+                                      const SizedBox(height: 4),
+                                      // Challenge/Catch Button
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                        child: SizedBox(
+                                          width: double.infinity,
+                                          height: 28,
+                                          child: ElevatedButton(
+                                            onPressed: () {
+                                              Navigator.pop(ctx);
+                                              Navigator.of(context).push(
+                                                MaterialPageRoute(
+                                                  builder: (_) => MascotScreen(
+                                                    mascotId: item.target.idnumber!,
+                                                    piId: item.target.piId ?? -1,
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.blue,
+                                              padding: EdgeInsets.zero,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                            ),
+                                            child: const Text("Catch", style: TextStyle(fontSize: 10, color: Colors.white)),
+                                          ),
+                                        ),
+                                      ),
                                       const SizedBox(height: 8),
                                     ],
                                   ),
