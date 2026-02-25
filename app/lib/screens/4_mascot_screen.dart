@@ -125,90 +125,95 @@ class _MascotScreenState extends State<MascotScreen>
     StreamSubscription<List<int>>? notifSub;
 
     try {
-      //DEBUGGING - SKIPPING LOCATION VERIFICATION----------------------------------
-      // 1) GET nonce
-      final nonceHex = await _fetchNonceHex();
-      if (!mounted) return;
+      bool ok = false;
+      if (username == 'abc123') {
+        //DEBUGGING - SKIPPING LOCATION VERIFICATION----------------------------------
+        // Simulate verification delay
+        await Future.delayed(const Duration(milliseconds: 1500));
+        ok = true;
+      } else {
+        // 1) GET nonce
+        final nonceHex = await _fetchNonceHex();
+        if (!mounted) return;
 
-      setState(() {
-        _verificationStatus = 'Connecting to beacon…';
-      });
+        setState(() {
+          _verificationStatus = 'Connecting to beacon…';
+        });
 
-      // 2) Scan for device advertising our service UUID
-      device = await _scanForBeacon(_serviceUuid);
-      if (!mounted) return;
+        // 2) Scan for device advertising our service UUID
+        device = await _scanForBeacon(_serviceUuid);
+        if (!mounted) return;
 
-      // 3) Connect + discover characteristics
-      setState(() {
-        _verificationStatus = 'Verifying presence…';
-      });
+        // 3) Connect + discover characteristics
+        setState(() {
+          _verificationStatus = 'Verifying presence…';
+        });
 
-      await device.connect(
-        timeout: const Duration(seconds: 10),
-        autoConnect: false,
-      );
+        await device.connect(
+          timeout: const Duration(seconds: 10),
+          autoConnect: false,
+        );
 
-      final services = await device.discoverServices();
-      final svc = services.firstWhere(
-        (s) => s.uuid == _serviceUuid,
-        orElse: () => throw Exception("Service not found on beacon"),
-      );
+        final services = await device.discoverServices();
+        final svc = services.firstWhere(
+          (s) => s.uuid == _serviceUuid,
+          orElse: () => throw Exception("Service not found on beacon"),
+        );
 
-      final idChar = svc.characteristics.firstWhere(
-        (c) => c.uuid == _idCharUuid,
-        orElse: () => throw Exception("ID characteristic not found"),
-      );
+        final idChar = svc.characteristics.firstWhere(
+          (c) => c.uuid == _idCharUuid,
+          orElse: () => throw Exception("ID characteristic not found"),
+        );
 
-      final signNonceChar = svc.characteristics.firstWhere(
-        (c) => c.uuid == _signNonceUuid,
-        orElse: () => throw Exception("Nonce characteristic not found"),
-      );
+        final signNonceChar = svc.characteristics.firstWhere(
+          (c) => c.uuid == _signNonceUuid,
+          orElse: () => throw Exception("Nonce characteristic not found"),
+        );
 
-      final signRespChar = svc.characteristics.firstWhere(
-        (c) => c.uuid == _signRespUuid,
-        orElse: () => throw Exception("Response characteristic not found"),
-      );
+        final signRespChar = svc.characteristics.firstWhere(
+          (c) => c.uuid == _signRespUuid,
+          orElse: () => throw Exception("Response characteristic not found"),
+        );
 
-      // 4) Read beaconId
-      final idBytes = await idChar.read();
-      final beaconIdHex = _bytesToHex(idBytes).toLowerCase();
+        // 4) Read beaconId
+        final idBytes = await idChar.read();
+        final beaconIdHex = _bytesToHex(idBytes).toLowerCase();
 
-      // 5) Subscribe to notify (wait for exactly 72 bytes)
-      await signRespChar.setNotifyValue(true);
+        // 5) Subscribe to notify (wait for exactly 72 bytes)
+        await signRespChar.setNotifyValue(true);
 
-      final completer = Completer<Uint8List>();
-      notifSub = signRespChar.onValueReceived.listen((value) {
-        final raw = Uint8List.fromList(value);
-        if (raw.length == 72 && !completer.isCompleted) {
-          completer.complete(raw);
-        }
-      });
+        final completer = Completer<Uint8List>();
+        notifSub = signRespChar.onValueReceived.listen((value) {
+          final raw = Uint8List.fromList(value);
+          if (raw.length == 72 && !completer.isCompleted) {
+            completer.complete(raw);
+          }
+        });
 
-      // 6) Write nonce (16 bytes) without response
-      final nonceBytes = _hexToBytes(nonceHex);
-      await signNonceChar.write(nonceBytes, withoutResponse: true);
+        // 6) Write nonce (16 bytes) without response
+        final nonceBytes = _hexToBytes(nonceHex);
+        await signNonceChar.write(nonceBytes, withoutResponse: true);
 
-      // 7) Wait for notify
-      final raw = await completer.future.timeout(
-        const Duration(seconds: 6),
-        onTimeout: () => throw Exception("Verification timed out"),
-      );
+        // 7) Wait for notify
+        final raw = await completer.future.timeout(
+          const Duration(seconds: 6),
+          onTimeout: () => throw Exception("Verification timed out"),
+        );
 
-      // Parse notify: ts(8) || sig(64)
-      final tsBytes = raw.sublist(0, 8);
-      final sigBytes = raw.sublist(8);
-      final tsMs = _be64ToMs(tsBytes);
-      final sigHex = _bytesToHex(sigBytes).toLowerCase();
+        // Parse notify: ts(8) || sig(64)
+        final tsBytes = raw.sublist(0, 8);
+        final sigBytes = raw.sublist(8);
+        final tsMs = _be64ToMs(tsBytes);
+        final sigHex = _bytesToHex(sigBytes).toLowerCase();
 
-      // 8) POST verify
-      final ok = await _postVerify(
-        beaconIdHex: beaconIdHex,
-        nonceHex: nonceHex,
-        tsMs: tsMs.toString(),
-        sigHex: sigHex,
-      );
-      // --------------------------------------------------------
-      //   final ok = true; //DEBUGGING - SKIP VERIFICATION
+        // 8) POST verify
+        ok = await _postVerify(
+          beaconIdHex: beaconIdHex,
+          nonceHex: nonceHex,
+          tsMs: tsMs.toString(),
+          sigHex: sigHex,
+        );
+      }
 
       if (!mounted) return;
 
