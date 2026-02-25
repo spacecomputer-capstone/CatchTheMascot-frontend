@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../state/current_user.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:app/models/mascot.dart';
+import 'package:app/screens/helpers.dart';
 
 final FirebaseFirestore _firestore = FirebaseFirestore.instanceFor(
   app: Firebase.app(),
@@ -9,15 +11,10 @@ final FirebaseFirestore _firestore = FirebaseFirestore.instanceFor(
 );
 
 class CatchScreen extends StatefulWidget {
-  final String mascotName;
-  final int mascotId;
+  // final String mascotName;
+  final Mascot mascot;
 
-  const CatchScreen({
-    Key? key,
-    // required this.mascotId, (for later when we have correct spawning mechanism)
-    this.mascotId = 5, // default mascot_5 in our db for current setup
-    this.mascotName = 'storkie',
-  }) : super(key: key);
+  const CatchScreen({Key? key, required this.mascot}) : super(key: key);
 
   @override
   State<CatchScreen> createState() => _CatchScreenState();
@@ -31,10 +28,8 @@ class _CatchScreenState extends State<CatchScreen>
   bool _hasResult = false;
   bool? _success;
 
-  // Normalized positions (0–1) where the zone is considered a “catch”.
-  // Middle 30% of the bar.
-  static const double _zoneStart = 0.35;
-  static const double _zoneEnd = 0.65;
+  late final double _zoneStart;
+  late final double _zoneEnd;
 
   @override
   void initState() {
@@ -44,10 +39,15 @@ class _CatchScreenState extends State<CatchScreen>
       duration: const Duration(milliseconds: 1600),
     )..repeat(reverse: true);
 
-    _position = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    );
+    _position = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
+    double halfzone = 0.5 * catchProbability;
+    _zoneStart = 0.5 - halfzone;
+    _zoneEnd = 0.5 + halfzone;
+    // print(
+    //   'Catch zone: ${(_zoneStart * 100).toStringAsFixed(1)}% - ${(_zoneEnd * 100).toStringAsFixed(1)}%',
+    // );
+    // print('Catch probability: ${(catchProbability * 100).toStringAsFixed(1)}%');
+    // print('halfzone: ${(halfzone * 100).toStringAsFixed(1)}%');
   }
 
   @override
@@ -55,6 +55,32 @@ class _CatchScreenState extends State<CatchScreen>
     _controller.dispose();
     super.dispose();
   }
+
+  // getter functions: TODO: get mascot
+
+  String get mascotName => widget.mascot.mascotName;
+
+  String get commonMascotName {
+    return mascotName
+        .replaceAll('_', ' ')
+        .split(' ')
+        .map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase())
+        .join(' ');
+  }
+
+  double get catchProbability => (1.0 - widget.mascot.rarity);
+
+  int get coinsToChallenge => widget.mascot.coins;
+
+  String get mascotTier => getRarityTier(widget.mascot.rarity);
+
+  Color get rarityColor => getRarityColor(widget.mascot.rarity);
+
+  String get mascotImagePath =>
+      "lib/assets/mascotimages/${widget.mascot.mascotId}_$mascotName.png";
+
+  int get respawnRate =>
+      widget.mascot.respawnTime; // in minutes, default 2 hours
 
   void _handleCatchTap() {
     if (_hasResult) return;
@@ -85,7 +111,9 @@ class _CatchScreenState extends State<CatchScreen>
       builder: (dialogCtx) {
         return Dialog(
           backgroundColor: Colors.black.withOpacity(0.9),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(20.0),
             child: Column(
@@ -99,8 +127,8 @@ class _CatchScreenState extends State<CatchScreen>
                 const SizedBox(height: 16),
                 Text(
                   success
-                      ? 'You caught ${widget.mascotName}!'
-                      : '${widget.mascotName} escaped!',
+                      ? 'You caught $commonMascotName!'
+                      : '$commonMascotName escaped!',
                   style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -113,10 +141,7 @@ class _CatchScreenState extends State<CatchScreen>
                   success
                       ? 'Nice timing! 🎯'
                       : 'Try to tap while the marker is inside the green zone.',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.white70,
-                  ),
+                  style: const TextStyle(fontSize: 14, color: Colors.white70),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 20),
@@ -126,7 +151,9 @@ class _CatchScreenState extends State<CatchScreen>
                       child: OutlinedButton(
                         onPressed: () {
                           Navigator.of(dialogCtx).pop(); // close dialog
-                          Navigator.of(context).pop(false); // return to MascotScreen: escaped
+                          Navigator.of(
+                            context,
+                          ).pop(false); // return to MascotScreen: escaped
                         },
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: Colors.white54),
@@ -140,7 +167,9 @@ class _CatchScreenState extends State<CatchScreen>
                       child: ElevatedButton(
                         onPressed: () {
                           Navigator.of(dialogCtx).pop(); // close dialog
-                          Navigator.of(context).pop(success); // return to MascotScreen with true/false
+                          Navigator.of(context).pop(
+                            success,
+                          ); // return to MascotScreen with true/false
                         },
                         child: const Text('Continue'),
                       ),
@@ -159,13 +188,10 @@ class _CatchScreenState extends State<CatchScreen>
     final u = CurrentUser.user;
     if (u == null) return;
 
-    await _firestore
-        .collection('users')
-        .doc(u.username)
-        .update({
-          'caughtMascots': FieldValue.arrayUnion([widget.mascotId]),
-          'coins': FieldValue.increment(1),
-        });
+    await _firestore.collection('users').doc(u.username).update({
+      'caughtMascots': FieldValue.arrayUnion([widget.mascot.mascotId]),
+      // 'coins': FieldValue.increment(1),
+    });
   }
 
   void _resetGame() {
@@ -183,30 +209,29 @@ class _CatchScreenState extends State<CatchScreen>
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text('Catch ${widget.mascotName}'),
-        backgroundColor: Colors.transparent,
+        title: Text('Catch $commonMascotName'),
+        backgroundColor: Colors.white,
         elevation: 0,
       ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFF001B48),
-              Color(0xFF0052A5),
-              Color(0xFF00A8E8),
-            ],
+            colors: [Color(0xFF001B48), Color(0xFF0052A5), Color(0xFF00A8E8)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 12.0,
+            ),
             child: Column(
               children: [
                 const SizedBox(height: 24),
                 Text(
-                  'Time your tap to catch ${widget.mascotName}!',
+                  'Time your tap to catch $commonMascotName!',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -217,10 +242,7 @@ class _CatchScreenState extends State<CatchScreen>
                 const SizedBox(height: 12),
                 const Text(
                   'When the white marker is inside the green zone,\npress the CATCH button.',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
@@ -309,7 +331,9 @@ class _CatchScreenState extends State<CatchScreen>
               const SizedBox(height: 12),
               Text(
                 _hasResult
-                    ? (_success == true ? 'Great timing!' : 'Too early or too late.')
+                    ? (_success == true
+                        ? 'Great timing!'
+                        : 'Too early or too late.')
                     : 'Watch the marker...',
                 style: const TextStyle(color: Colors.white70),
               ),
@@ -330,10 +354,7 @@ class _CatchScreenState extends State<CatchScreen>
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
           ),
-          textStyle: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         child: const Text('CATCH!'),
       ),

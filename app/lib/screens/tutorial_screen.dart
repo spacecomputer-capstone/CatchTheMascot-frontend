@@ -10,18 +10,17 @@ class TutorialScreen extends StatelessWidget {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFF001B48),
-              Color(0xFF0052A5),
-              Color(0xFF00A8E8),
-            ],
+            colors: [Color(0xFF001B48), Color(0xFF0052A5), Color(0xFF00A8E8)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 16.0,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -36,7 +35,7 @@ class TutorialScreen extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 40),
-                
+
                 Expanded(
                   child: SingleChildScrollView(
                     child: Column(
@@ -44,37 +43,44 @@ class TutorialScreen extends StatelessWidget {
                         _buildRuleItem(
                           icon: Icons.map,
                           title: 'Find & Challenge',
-                          description: 'Walk to mascots on the map. Challenges cost 2 Coins.',
+                          description:
+                              'Walk to mascots on the map. Challenges cost coins.',
                         ),
                         const SizedBox(height: 24),
                         _buildRuleItem(
                           icon: Icons.bluetooth_searching,
                           title: 'Prove Location',
-                          description: 'We check if you are really there using Bluetooth. Stay close!',
+                          description:
+                              'We check if you are really there using Bluetooth. Stay close!',
                         ),
                         const SizedBox(height: 24),
                         _buildRuleItem(
                           icon: Icons.sports_baseball,
-                          title: 'Catch & Earn',
-                          description: 'Win the timing game to catch a mascot. Reward: +1 Coin!',
+                          title: 'Catch the Mascot',
+                          description:
+                              'Win the timing game to catch a mascot. The more rare the mascot is, the harder the game. Reward: a new mascot for your collection!',
                         ),
                         const SizedBox(height: 24),
                         _buildRuleItem(
                           icon: Icons.savings,
-                          title: 'Starter Bonus',
-                          description: 'You start with 5 Free Coins to get you going!',
+                          title: 'Earn Coins',
+                          description:
+                              'You start with 5 Free Coins to get you going. Earn more by checking in daily or walking to a new location!',
                         ),
                       ],
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 ElevatedButton(
                   onPressed: () {
                     // Navigate to location permission screen after tutorial
-                    Navigator.pushReplacementNamed(context, Routes.locationPermission);
+                    Navigator.pushReplacementNamed(
+                      context,
+                      Routes.locationPermission,
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -119,11 +125,7 @@ class TutorialScreen extends StatelessWidget {
               color: Colors.white.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              icon,
-              color: Colors.white,
-              size: 32,
-            ),
+            child: Icon(icon, color: Colors.white, size: 32),
           ),
           const SizedBox(width: 20),
           Expanded(

@@ -1,6 +1,6 @@
 class Routes {
   static const String home = '/';
-    static const String register = '/register';
+  static const String register = '/register';
   static const String locationPermission = '/location_permission';
   static const String map = '/map';
   //   static const String verification = '/verification';
@@ -9,8 +9,7 @@ class Routes {
   //   static const String catchResult = '/catch_result';
   static const String inventory = '/inventory';
   static const String apiTest = '/api_test';
-  static const String userApiTest = '/user_api_test';
+  // static const String userApiTest = '/user_api_test';
   static const String tutorial = '/tutorial';
   static const String profile = '/profile';
-  // static const String mascotApiTest = '/mascot_api_test';
 }

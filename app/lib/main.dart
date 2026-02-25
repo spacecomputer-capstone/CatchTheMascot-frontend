@@ -19,7 +19,6 @@ import 'utils/routes.dart';
 //firebasefirestore
 import 'package:app/apis/mascot_api.dart';
 import 'package:app/models/mascot.dart';
-import 'screens/99_user_api_test_screen.dart';
 import 'package:app/state/current_user.dart';
 import 'package:app/state/current_user.dart';
 import 'screens/tutorial_screen.dart';
@@ -59,7 +58,8 @@ class CatchTheMascotApp extends StatelessWidget {
       routes: {
         Routes.home: (context) => const HomeScreen(), //login screen
         Routes.register: (context) => const RegisterScreen(),
-        Routes.locationPermission: (context) => const LocationPermissionScreen(),
+        Routes.locationPermission:
+            (context) => const LocationPermissionScreen(),
         // Routes.map: (context) => const MapScreen(),
         // Routes.verification: (context) => const VerificationScreen(),
         // Routes.verificationResult: (context) => const VerificationResultScreen(),
@@ -70,7 +70,7 @@ class CatchTheMascotApp extends StatelessWidget {
         // Routes.caughtMascots: (context) => const CaughtMascotsScreen(),
         Routes.map: (context) => const CatchMascotMapboxScreen(),
         Routes.apiTest: (context) => ApiTestScreen(),
-        Routes.userApiTest: (context) => const UserApiTestScreen(),
+        // Routes.userApiTest: (context) => const UserApiTestScreen(),
         Routes.tutorial: (context) => const TutorialScreen(),
       },
     );
