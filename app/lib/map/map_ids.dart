@@ -13,6 +13,11 @@ class MapIds {
   static const String fixedMascotGlbAsset =
       'assets/icons/storke-nobackground.glb';
 
+  // New Mascot Path
+  static const String raccoonGlbAsset = 'lib/assets/3dmascots/1_raccoon.glb';
+  // Player Path
+  static const String playerGlbAsset = 'assets/player/player.glb';
+
   static const double storkeLat = 34.412640;
   static const double storkeLng = -119.848396;
 
@@ -27,13 +32,7 @@ class MapIds {
   // Player faces backwards in your setup, so you offset 180
   static const double playerModelHeadingOffset = 180.0;
 
-  // Mascot model tuning – MATCH PLAYER SCALE
-  // Your PlayerModelController uses [10,10,10]
   static const double mascotModelScale = 10.0;
-
-  // Player doesn't translate upward, so keep 0.0 for "same height"
   static const double mascotModelHeightMeters = 0.0;
-
-  // If your storky faces backwards, set 180.0; otherwise keep 0.0
   static const double mascotModelHeadingOffset = 0.0;
 }

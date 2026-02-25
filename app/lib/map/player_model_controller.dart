@@ -1,5 +1,7 @@
 import 'dart:convert' as convert;
+import 'package:flutter/foundation.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' as mb;
+import 'map_ids.dart';
 
 class PlayerModelController {
   PlayerModelController({
@@ -28,7 +30,7 @@ class PlayerModelController {
       );
 
       final layer = mb.ModelLayer(id: layerId, sourceId: sourceId)
-        ..modelId = "asset://assets/player/player.glb"
+        ..modelId = _modelUri(MapIds.playerGlbAsset)
         ..modelScale = const [20.0, 20.0, 20.0]
         ..modelRotation = const [0.0, 0.0, 0.0]
         ..modelType = mb.ModelType.COMMON_3D;
@@ -38,8 +40,15 @@ class PlayerModelController {
       return;
     }
 
-    // Move existing model by updating GeoJSON source data
     await map.style.setStyleSourceProperty(sourceId, 'data', data);
+  }
+
+  String _modelUri(String flutterAssetPath) {
+    if (flutterAssetPath.startsWith("asset://")) return flutterAssetPath;
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return "asset://flutter_assets/$flutterAssetPath";
+    }
+    return "asset://$flutterAssetPath";
   }
 
   Future<void> setHeading(double gyroBearing) async {

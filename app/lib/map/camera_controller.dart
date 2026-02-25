@@ -25,6 +25,7 @@ class CameraController {
     required double bearing,
   }) async {
     final now = DateTime.now();
+    // Increase frequency for smoother updates (maxUpdateHz is usually 10, so 100ms)
     final minFrameIntervalMs = (1000 / maxUpdateHz).floor();
     if (now.difference(_lastCamUpdate).inMilliseconds < minFrameIntervalMs) return;
     _lastCamUpdate = now;
@@ -36,7 +37,8 @@ class CameraController {
         pitch: pitch,
         bearing: bearing,
       ),
-      mb.MapAnimationOptions(duration: 400, startDelay: 0),
+      // Use a shorter duration and linear-like curve for "real-time" feel
+      mb.MapAnimationOptions(duration: 300, startDelay: 0),
     );
   }
 
@@ -53,7 +55,8 @@ class CameraController {
       currentPos.latitude,
       currentPos.longitude,
     );
-    if (distance < 1.0) return currentBearing;
+    // Only update bearing if we moved significantly to avoid jitter
+    if (distance < 2.0) return currentBearing;
 
     return computeBearing(
       lastPos.latitude,
