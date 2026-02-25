@@ -29,6 +29,9 @@ class MapIds {
 
   static const double playerModelHeadingOffset = 180.0;
   static const double mascotModelScale = 25.0;
-  static const double mascotModelHeightMeters = 0.0;
+  
+  // Increased height from 0.0 to 3.0 meters to prevent mascots from being buried in the ground/terrain
+  static const double mascotModelHeightMeters = 3.0;
+  
   static const double mascotModelHeadingOffset = 0.0;
 }

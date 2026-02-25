@@ -64,9 +64,10 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
       id: "storkie_tower",
       name: "Storkie",
       lat: MapIds.storkeLat,
-      lng: MapIds.storkeLng + 0.00010,
+      lng: MapIds.storkeLng + 0.00010, // East of tower (Front)
       glbAssetPath: 'lib/assets/3dmascots/5_storkie.glb',
       pngAssetPath: 'lib/assets/mascotimages/5_storkie.png',
+      height: 0.0, 
     ),
     MascotTarget(
       idnumber: 1,
@@ -77,6 +78,7 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
       lng: -119.8444312386711,
       glbAssetPath: 'lib/assets/3dmascots/1_raccoon.glb',
       pngAssetPath: 'lib/assets/mascotimages/1_raccoon.png',
+      height: 25.0, // Significantly increased height to clear Henley Hall terrain
     ),
   ];
 
@@ -254,7 +256,7 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
           );
         },
         modelScale: MapIds.mascotModelScale,
-        modelHeightMeters: MapIds.mascotModelHeightMeters,
+        modelHeightMeters: t.height,
         modelHeadingOffset: MapIds.mascotModelHeadingOffset,
       );
 
@@ -391,7 +393,18 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
                               }
 
                               return GestureDetector(
-                                onTap: toggleTracking,
+                                onTap: () {
+                                  // Click on mascot card now opens the catch page
+                                  Navigator.pop(ctx);
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => MascotScreen(
+                                        mascotId: item.target.idnumber!,
+                                        piId: item.target.piId ?? -1,
+                                      ),
+                                    ),
+                                  );
+                                },
                                 child: Container(
                                   width: 120,
                                   margin: const EdgeInsets.only(right: 12),
@@ -658,6 +671,7 @@ class MascotTarget {
     required this.lng,
     required this.glbAssetPath,
     required this.pngAssetPath,
+    this.height = 0.0,
   });
 
   final int? idnumber;
@@ -668,6 +682,7 @@ class MascotTarget {
   final double lng;
   final String glbAssetPath;
   final String pngAssetPath;
+  final double height;
 }
 
 class MascotWithDistance {

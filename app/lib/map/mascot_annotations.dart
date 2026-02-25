@@ -56,7 +56,8 @@ class MascotAnnotations {
   }
 
   Future<void> setGlow(bool active) async {
-    if (!_modelAdded) return;
+    final layerExists = await map.style.styleLayerExists(_layerId);
+    if (!layerExists) return;
     
     // Scale up slightly to "glow" or emphasize
     final scale = active ? modelScale * 1.5 : modelScale;
@@ -83,8 +84,12 @@ class MascotAnnotations {
     } catch (_) {}
 
     try {
-      if (_modelAdded) {
+      final layerExists = await map.style.styleLayerExists(_layerId);
+      if (layerExists) {
         await map.style.removeStyleLayer(_layerId);
+      }
+      final sourceExists = await map.style.styleSourceExists(_sourceId);
+      if (sourceExists) {
         await map.style.removeStyleSource(_sourceId);
       }
     } catch (_) {}
@@ -94,22 +99,29 @@ class MascotAnnotations {
     final point = mb.Point(coordinates: mb.Position(lng, lat));
     final data = convert.json.encode(point);
 
-    if (!_modelAdded) {
-      await map.style.addSource(mb.GeoJsonSource(id: _sourceId, data: data));
+    try {
+      final sourceExists = await map.style.styleSourceExists(_sourceId);
+      
+      if (!sourceExists) {
+        await map.style.addSource(mb.GeoJsonSource(id: _sourceId, data: data));
 
-      final layer = mb.ModelLayer(id: _layerId, sourceId: _sourceId)
-        ..modelId = _modelUri(glbAssetPath)
-        ..modelScale = [modelScale, modelScale, modelScale]
-        ..modelTranslation = [0.0, 0.0, modelHeightMeters]
-        ..modelRotation = [0.0, 0.0, modelHeadingOffset]
-        ..modelType = mb.ModelType.COMMON_3D;
+        final layer = mb.ModelLayer(id: _layerId, sourceId: _sourceId)
+          ..modelId = _modelUri(glbAssetPath)
+          ..modelScale = [modelScale, modelScale, modelScale]
+          ..modelTranslation = [0.0, 0.0, modelHeightMeters]
+          ..modelRotation = [0.0, 0.0, modelHeadingOffset]
+          ..modelType = mb.ModelType.COMMON_3D;
 
-      await map.style.addLayer(layer);
-      _modelAdded = true;
-      return;
+        await map.style.addLayer(layer);
+        _modelAdded = true;
+        return;
+      }
+    } catch (e) {
+      debugPrint("Error checking/adding mascot source: $e");
     }
 
     await map.style.setStyleSourceProperty(_sourceId, 'data', data);
+    _modelAdded = true;
   }
 
   String _modelUri(String flutterAssetPath) {
