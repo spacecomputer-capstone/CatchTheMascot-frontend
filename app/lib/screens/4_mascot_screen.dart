@@ -35,6 +35,7 @@ import 'package:app/models/mascot.dart';
 import 'package:app/screens/helpers.dart';
 
 import '6_catch_screen.dart';
+import 'dnd_combat_screen.dart';
 
 class MascotScreen extends StatefulWidget {
   //mascot information
@@ -241,6 +242,9 @@ class _MascotScreenState extends State<MascotScreen>
           await updateUser(CurrentUser.user!, context);
         }
 
+        final String mName = _mascot!.mascotName.toLowerCase();
+        final bool isDndMascot = mName == 'storky' || mName == 'mascot_4' || mName == 'mascot_1';
+
         final didCatch = await Navigator.push<bool>(
           context,
           MaterialPageRoute(
@@ -248,9 +252,11 @@ class _MascotScreenState extends State<MascotScreen>
                 (_) =>
                     _isLoading || _mascot == null
                         ? const Scaffold(
-                          body: Center(child: CircularProgressIndicator()),
-                        )
-                        : CatchScreen(mascot: _mascot!),
+                           body: Center(child: CircularProgressIndicator()),
+                         )
+                        : (isDndMascot 
+                             ? DndCombatScreen(mascot: _mascot!)
+                             : CatchScreen(mascot: _mascot!)),
           ),
         );
 
