@@ -3,9 +3,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:cryptography/cryptography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:app/state/current_user.dart';
 import 'package:app/apis/user_api.dart';
@@ -29,6 +31,7 @@ class _MascotScreenState extends State<MascotScreen>
     with SingleTickerProviderStateMixin {
   bool _isVerifying = false;
   String _verificationStatus = 'Tap "Challenge" to start!';
+  String? _lastJwtFailure;
   bool _hasCaughtMascot = false;
   bool _hasAttempted = false;
 
@@ -41,7 +44,26 @@ class _MascotScreenState extends State<MascotScreen>
 
   late final AnimationController _pulseController;
 
-  static const String _apiBase = "https://spacescrypt-api.onrender.com";
+  // JWT backend (follows mentor given sequence) + legacy Render fallback which used typescript
+  static const bool _useJwtPrimary = true;
+  static const bool _allowLegacyFallback = true;
+  static const String _jwtApiBase = "https://jwt-verification-sk0m.onrender.com";
+  static const String _legacyApiBase = "https://spacescrypt-api.onrender.com";
+  static const String _jwtUserId = "user1";
+  // Orbitport cTRNG can add latency; allow realistic discovery budget.
+  static const Duration _bridgeDiscoveryTimeout = Duration(seconds: 8);
+  static const Duration _bridgeProbeTimeout = Duration(milliseconds: 3000);
+  // Allow realistic mobile->Render round trip.
+  static const Duration _jwtBackendTimeout = Duration(seconds: 6);
+  static const List<String> _defaultBridgeCandidates = [
+    "http://127.0.0.1:8080",
+    "http://10.0.2.2:8080",
+    "http://localhost:8080",
+    "http://raspberrypi.local:8080",
+    "http://pi.local:8080",
+  ];
+  // Ed25519 seed used by app to sign challenge as user1.
+  static const String _jwtUserSeedHex = "3ef871ad732fc316c2dcd8baef06a49d4097de4e98ea746d9a31c605412b8105";
 
   static final Guid _serviceUuid = Guid("eb5c86a4-733c-4d9d-aab2-285c2dab09a1");
   static final Guid _idCharUuid = Guid("eb5c86a4-733c-4d9d-aab2-285c2dab09a2");
@@ -95,63 +117,82 @@ class _MascotScreenState extends State<MascotScreen>
       if (username == "1") {
         ok = true;
       } else {
-        final nonceHex = await _fetchNonceHex();
-        if (!mounted) return;
+        if (_useJwtPrimary) {
+          if (!mounted) return;
+          setState(() { _verificationStatus = 'Verifying presence…'; });
+          ok = await _runJwtPrimaryFlow();
+        }
 
-        setState(() { _verificationStatus = 'Connecting to beacon…'; });
+        if (!ok && _allowLegacyFallback) {
+          if (!mounted) return;
+          // setState(() {
+          //   final reason = _lastJwtFailure;
+          //   _verificationStatus = (reason == null || reason.isEmpty)
+          //       ? 'JWT failed, trying fallback…'
+          //       : 'JWT failed ($reason), trying fallback…';
+          // });
+          final nonceHex = await _fetchNonceHex();
+          if (!mounted) return;
 
-        device = await _scanForBeacon(_serviceUuid);
-        if (!mounted) return;
+          setState(() { _verificationStatus = 'Connecting…'; });
 
-        setState(() { _verificationStatus = 'Verifying presence…'; });
+          device = await _scanForBeacon(_serviceUuid);
+          if (!mounted) return;
 
-        await device.connect(timeout: const Duration(seconds: 10), autoConnect: false);
+          setState(() { _verificationStatus = 'Verifying presence…'; });
 
-        final services = await device.discoverServices();
-        final svc = services.firstWhere((s) => s.uuid == _serviceUuid);
+          await device.connect(timeout: const Duration(seconds: 10), autoConnect: false);
 
-        final idChar = svc.characteristics.firstWhere((c) => c.uuid == _idCharUuid);
-        final signNonceChar = svc.characteristics.firstWhere((c) => c.uuid == _signNonceUuid);
-        final signRespChar = svc.characteristics.firstWhere((c) => c.uuid == _signRespUuid);
+          final services = await device.discoverServices();
+          final svc = services.firstWhere((s) => s.uuid == _serviceUuid);
 
-        final idBytes = await idChar.read();
-        final beaconIdHex = _bytesToHex(idBytes).toLowerCase();
+          final idChar = svc.characteristics.firstWhere((c) => c.uuid == _idCharUuid);
+          final signNonceChar = svc.characteristics.firstWhere((c) => c.uuid == _signNonceUuid);
+          final signRespChar = svc.characteristics.firstWhere((c) => c.uuid == _signRespUuid);
 
-        await signRespChar.setNotifyValue(true);
+          final idBytes = await idChar.read();
+          final beaconIdHex = _bytesToHex(idBytes).toLowerCase();
 
-        final completer = Completer<Uint8List>();
-        notifSub = signRespChar.onValueReceived.listen((value) {
-          final raw = Uint8List.fromList(value);
-          if (raw.length == 72 && !completer.isCompleted) {
-            completer.complete(raw);
-          }
-        });
+          await signRespChar.setNotifyValue(true);
 
-        final nonceBytes = _hexToBytes(nonceHex);
-        await signNonceChar.write(nonceBytes, withoutResponse: true);
+          final completer = Completer<Uint8List>();
+          notifSub = signRespChar.onValueReceived.listen((value) {
+            final raw = Uint8List.fromList(value);
+            if (raw.length == 72 && !completer.isCompleted) {
+              completer.complete(raw);
+            }
+          });
 
-        final raw = await completer.future.timeout(
-          const Duration(seconds: 6),
-          onTimeout: () => throw Exception("Verification timed out"),
-        );
+          final nonceBytes = _hexToBytes(nonceHex);
+          await signNonceChar.write(nonceBytes, withoutResponse: true);
 
-        final tsBytes = raw.sublist(0, 8);
-        final sigBytes = raw.sublist(8);
-        final tsMs = _be64ToMs(tsBytes);
-        final sigHex = _bytesToHex(sigBytes).toLowerCase();
+          final raw = await completer.future.timeout(
+            const Duration(seconds: 6),
+            onTimeout: () => throw Exception("Verification timed out"),
+          );
 
-        ok = await _postVerify(
-          beaconIdHex: beaconIdHex,
-          nonceHex: nonceHex,
-          tsMs: tsMs.toString(),
-          sigHex: sigHex,
-        );
+          final tsBytes = raw.sublist(0, 8);
+          final sigBytes = raw.sublist(8);
+          final tsMs = _be64ToMs(tsBytes);
+          final sigHex = _bytesToHex(sigBytes).toLowerCase();
+
+          ok = await _postVerifyLegacy(
+            beaconIdHex: beaconIdHex,
+            nonceHex: nonceHex,
+            tsMs: tsMs.toString(),
+            sigHex: sigHex,
+          );
+        }
       }
 
       if (!mounted) return;
 
       if (ok) {
         setState(() { _verificationStatus = 'Presence verified — start catching!'; });
+
+        // Keep success state visible briefly before navigating, matching legacy UX.
+        await Future.delayed(const Duration(milliseconds: 900));
+        if (!mounted) return;
 
         if (!CurrentUser.user!.visitedPis.contains(widget.piId)) {
           claimCoin(newLocationReward, message: "New location visited! +$newLocationReward coins! 🎉");
@@ -202,16 +243,228 @@ class _MascotScreenState extends State<MascotScreen>
     }
   }
 
+  Future<bool> _runJwtPrimaryFlow() async {
+    try {
+      final preferredPiId = await _getStoredPiJwtId();
+      final resolved = await _resolveBridgeFromBackend(preferredPiId);
+      final resolvedPiId = (resolved?["pi_id"] as String?) ?? preferredPiId;
+      final packet = await _fetchPiSignedChallenge(
+        resolvedPiId,
+        resolvedBridge: resolved?["bridge_url"] as String?,
+      ).timeout(
+        _bridgeDiscoveryTimeout,
+        onTimeout: () => throw Exception("Pi discovery timed out (>8s)"),
+      );
+      final piId = packet["pi_id"] as String? ?? resolvedPiId;
+      final challenge = packet["challenge"] as String? ?? "";
+      final piSignature = packet["pi_signature"] as String? ?? "";
+
+      if (challenge.isEmpty || piSignature.isEmpty) {
+        throw Exception("Pi returned empty challenge/signature");
+      }
+
+      await _storePiJwtId(piId);
+
+      final userSignature = await _signChallengeWithAppKey(challenge);
+      return _postJwtExchange(
+        piId: piId,
+        challenge: challenge,
+        piSignature: piSignature,
+        userSignature: userSignature,
+      );
+    } catch (e) {
+      _lastJwtFailure = e.toString();
+      // for debug
+      // if (mounted) {
+      //   setState(() {
+      //     _verificationStatus = "JWT primary failed: $e";
+      //   });
+      // }
+      return false;
+    }
+  }
+
+  Future<Map<String, dynamic>> _fetchPiSignedChallenge(
+    String preferredPiId, {
+    String? resolvedBridge,
+  }) async {
+    final candidates = await _bridgeCandidates(
+      preferredPiId,
+      resolvedBridge: resolvedBridge,
+    );
+
+    for (final base in candidates) {
+      try {
+        final uriWithPi = Uri.parse(
+          "$base/challenge"
+          "?user_id=$_jwtUserId&pi_id=${Uri.encodeQueryComponent(preferredPiId)}"
+        );
+        http.Response r = await http.get(uriWithPi).timeout(_bridgeProbeTimeout);
+
+        if (r.statusCode != 200) {
+          // Retry without pi_id for bridges that do not accept unknown ids.
+          final uriNoPi = Uri.parse("$base/challenge?user_id=$_jwtUserId");
+          r = await http.get(uriNoPi).timeout(_bridgeProbeTimeout);
+        }
+
+        if (r.statusCode != 200) {
+          continue;
+        }
+        final payload = jsonDecode(r.body) as Map<String, dynamic>;
+        final challenge = payload["challenge"] as String? ?? "";
+        final piSig = payload["pi_signature"] as String? ?? "";
+        if (challenge.isEmpty || piSig.isEmpty) {
+          continue;
+        }
+        await _storeBridgeBase(base);
+        return payload;
+      } catch (_) {
+        continue;
+      }
+    }
+    throw Exception("No Pi bridge reachable");
+  }
+
+  Future<Map<String, dynamic>?> _resolveBridgeFromBackend(String piId) async {
+    try {
+      final withPi = Uri.parse(
+        "$_jwtApiBase/presence/pi/resolve?pi_id=${Uri.encodeQueryComponent(piId)}"
+      );
+      final r1 = await http.get(withPi).timeout(_bridgeProbeTimeout);
+      if (r1.statusCode == 200) {
+        final payload = jsonDecode(r1.body) as Map<String, dynamic>;
+        final bridge = payload["bridge_url"] as String?;
+        if (bridge != null && bridge.isNotEmpty) return payload;
+      }
+
+      final withoutPi = Uri.parse("$_jwtApiBase/presence/pi/resolve");
+      final r2 = await http.get(withoutPi).timeout(_bridgeProbeTimeout);
+      if (r2.statusCode != 200) return null;
+      final payload2 = jsonDecode(r2.body) as Map<String, dynamic>;
+      final bridge2 = payload2["bridge_url"] as String?;
+      if (bridge2 == null || bridge2.isEmpty) return null;
+      return payload2;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<String> _signChallengeWithAppKey(String challenge) async {
+    final algorithm = Ed25519();
+    final seed = _hexToBytes(_jwtUserSeedHex);
+    final keyPair = await algorithm.newKeyPairFromSeed(seed);
+    final sig = await algorithm.sign(utf8.encode(challenge), keyPair: keyPair);
+    return _bytesToHex(sig.bytes).toLowerCase();
+  }
+
+  Future<bool> _postJwtExchange({
+    required String piId,
+    required String challenge,
+    required String piSignature,
+    required String userSignature,
+  }) async {
+    try {
+      final r = await http.post(
+        Uri.parse("$_jwtApiBase/presence/exchange"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "user_id": _jwtUserId,
+          "pi_id": piId,
+          "challenge": challenge,
+          "pi_signature": piSignature,
+          "user_signature": userSignature,
+        }),
+      ).timeout(_jwtBackendTimeout);
+
+      if (r.statusCode != 200) {
+        if (r.statusCode == 401 && r.body.contains("Invalid Pi signature")) {
+          await _clearPiBridgeCache();
+        }
+        throw Exception("JWT exchange failed (${r.statusCode}): ${r.body}");
+      }
+      final json = jsonDecode(r.body) as Map<String, dynamic>;
+      final jwt = (json["presence_jwt"] as String?) ?? "";
+      final sid = (json["sid"] as String?) ?? "";
+      if (jwt.isEmpty) {
+        throw Exception("JWT missing in response");
+      }
+      await _storePresenceJwt(jwt, sid);
+      _lastJwtFailure = null;
+      return true;
+    } catch (e) {
+      _lastJwtFailure = e.toString();
+      if (mounted) {
+        setState(() {
+          _verificationStatus = "JWT exchange error: $e";
+        });
+      }
+      return false;
+    }
+  }
+
+  Future<void> _storePresenceJwt(String jwt, String sid) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString("presence_jwt", jwt);
+    await prefs.setString("presence_sid", sid);
+  }
+
+  String _piJwtPrefKey() => "jwt_pi_id_for_widget_pi_${widget.piId}";
+  String _piBridgePrefKey() => "jwt_pi_bridge_for_widget_pi_${widget.piId}";
+
+  String _defaultPiJwtId() => "pi${widget.piId}";
+
+  Future<String> _getStoredPiJwtId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_piJwtPrefKey()) ?? _defaultPiJwtId();
+  }
+
+  Future<void> _storePiJwtId(String piId) async {
+    if (piId.isEmpty) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_piJwtPrefKey(), piId);
+  }
+
+  Future<List<String>> _bridgeCandidates(
+    String preferredPiId, {
+    String? resolvedBridge,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final stored = prefs.getString(_piBridgePrefKey());
+    final merged = <String>[
+      if (resolvedBridge != null && resolvedBridge.isNotEmpty) resolvedBridge,
+      if (stored != null && stored.isNotEmpty) stored,
+      "http://$preferredPiId.local:8080",
+      ..._defaultBridgeCandidates,
+    ];
+    final seen = <String>{};
+    final out = <String>[];
+    for (final b in merged) {
+      if (seen.add(b)) out.add(b);
+    }
+    return out;
+  }
+
+  Future<void> _storeBridgeBase(String base) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_piBridgePrefKey(), base);
+  }
+
+  Future<void> _clearPiBridgeCache() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_piBridgePrefKey());
+    await prefs.remove(_piJwtPrefKey());
+  }
+
   Future<String> _fetchNonceHex() async {
-    final r = await http.get(Uri.parse("$_apiBase/api/nonce"));
+    final r = await http.get(Uri.parse("$_legacyApiBase/api/nonce"));
     if (r.statusCode != 200) throw Exception("nonce failed");
     final json = jsonDecode(r.body);
     return (json["nonceHex"] as String).toLowerCase();
   }
 
-  Future<bool> _postVerify({required String beaconIdHex, required String nonceHex, required String tsMs, required String sigHex}) async {
+  Future<bool> _postVerifyLegacy({required String beaconIdHex, required String nonceHex, required String tsMs, required String sigHex}) async {
     final r = await http.post(
-      Uri.parse("$_apiBase/api/verify"),
+      Uri.parse("$_legacyApiBase/api/verify"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({"beaconIdHex": beaconIdHex, "nonceHex": nonceHex, "tsMs": tsMs, "sigHex": sigHex}),
     );
