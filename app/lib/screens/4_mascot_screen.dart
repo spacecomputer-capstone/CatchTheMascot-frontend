@@ -139,7 +139,7 @@ class _MascotScreenState extends State<MascotScreen>
           device = await _scanForBeacon(_serviceUuid);
           if (!mounted) return;
 
-          setState(() { _verificationStatus = 'Verifying presence…'; });
+          setState(() { _verificationStatus = 'Still Going…'; });
 
           await device.connect(timeout: const Duration(seconds: 10), autoConnect: false);
 
