@@ -188,6 +188,10 @@ class _CatchScreenState extends State<CatchScreen>
     final u = CurrentUser.user;
     if (u == null) return;
 
+    if (!u.caughtMascots.contains(widget.mascot.mascotId)) {
+      u.caughtMascots.add(widget.mascot.mascotId);
+    }
+
     await _firestore.collection('users').doc(u.username).update({
       'caughtMascots': FieldValue.arrayUnion([widget.mascot.mascotId]),
       // 'coins': FieldValue.increment(1),
