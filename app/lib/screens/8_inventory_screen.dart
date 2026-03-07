@@ -47,6 +47,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
       final List<int> userMascotIds =
           await getCaughtMascotsOfUser(CurrentUser.user!.username);
 
+      if (CurrentUser.user != null) {
+        CurrentUser.user!.caughtMascots = List<int>.from(userMascotIds);
+      }
+
       final List<Mascot> fetchedMascots =
           await getMascotsByIds(userMascotIds);
 

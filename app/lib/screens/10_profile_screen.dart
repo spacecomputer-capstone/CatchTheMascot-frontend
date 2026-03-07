@@ -2,8 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:app/state/current_user.dart';
 import 'package:app/utils/routes.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  Future<void> _openInventory() async {
+    await Navigator.pushNamed(context, Routes.inventory);
+    if (!mounted) return;
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -96,9 +107,7 @@ class ProfileScreen extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, Routes.inventory);
-                      },
+                      onPressed: _openInventory,
                       style: _buttonStyle(),
                       child: Text(
                         "My Collection (${user.caughtMascots.length})",
