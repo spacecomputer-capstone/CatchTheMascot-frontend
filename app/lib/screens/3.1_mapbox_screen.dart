@@ -1,6 +1,6 @@
 import 'dart:convert' as convert;
-import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:http/http.dart' as http;
@@ -48,6 +48,8 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
   double _pitch = MapIds.defaultPitch;
   double _bearing = 0.0;
   double _gyroBearing = 0.0;
+  DateTime _lastHeadingUpdate = DateTime.fromMillisecondsSinceEpoch(0);
+  double _lastAppliedHeading = 0.0;
 
   CameraController? _camera;
   PlayerModelController? _playerModel;
@@ -99,6 +101,10 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
   void initState() {
     super.initState();
     _loadMascotData();
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      // Reduce 3D tilt on Android to lower rendering workload.
+      _pitch = 65.0;
+    }
 
     _player = Player(
       onPosition: (pos) async {
@@ -142,6 +148,15 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
       },
       onHeading: (b) async {
         _gyroBearing = b;
+        final now = DateTime.now();
+        final minIntervalMs =
+            defaultTargetPlatform == TargetPlatform.android ? 140 : 90;
+        if (now.difference(_lastHeadingUpdate).inMilliseconds < minIntervalMs) {
+          return;
+        }
+        if (_headingDelta(_lastAppliedHeading, _gyroBearing) < 2.0) return;
+        _lastHeadingUpdate = now;
+        _lastAppliedHeading = _gyroBearing;
 
         if (_isAutoFollow && _mapReady && _currentPos != null) {
           if (!mounted) return;
@@ -191,7 +206,9 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
 
     _camera = CameraController(
       map: _map!,
-      maxUpdateHz: MapIds.maxCameraUpdateHz,
+      maxUpdateHz: defaultTargetPlatform == TargetPlatform.android
+          ? 6.0
+          : MapIds.maxCameraUpdateHz,
       minZoom: MapIds.minZoom,
       maxZoom: MapIds.maxZoom,
     );
@@ -280,7 +297,9 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
       _isAutoFollow = true;
       _zoom = MapIds.autoFollowZoom;
       _bearing = _gyroBearing;
-      _pitch = MapIds.defaultPitch;
+      _pitch = defaultTargetPlatform == TargetPlatform.android
+          ? 65.0
+          : MapIds.defaultPitch;
     });
     await updateGesturesSettings(_map!, isAutoFollow: _isAutoFollow);
     await _camera?.easeToPosition(
@@ -319,6 +338,12 @@ class _CatchMascotMapboxScreenState extends State<CatchMascotMapboxScreen> {
     setState(() {
       _nearbyMascots = items;
     });
+  }
+
+  double _headingDelta(double a, double b) {
+    var d = (b - a).abs() % 360.0;
+    if (d > 180.0) d = 360.0 - d;
+    return d;
   }
 
   Future<void> _showNearbyMascotsOverlay() async {

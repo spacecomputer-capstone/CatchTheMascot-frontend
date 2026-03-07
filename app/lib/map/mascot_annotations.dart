@@ -1,7 +1,6 @@
 import 'dart:convert' as convert;
 import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' as mb;
@@ -126,10 +125,6 @@ class MascotAnnotations {
 
   String _modelUri(String flutterAssetPath) {
     if (flutterAssetPath.startsWith("asset://")) return flutterAssetPath;
-
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      return "asset://flutter_assets/$flutterAssetPath";
-    }
     return "asset://$flutterAssetPath";
   }
 

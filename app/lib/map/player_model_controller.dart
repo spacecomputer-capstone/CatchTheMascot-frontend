@@ -53,9 +53,6 @@ class PlayerModelController {
 
   String _modelUri(String flutterAssetPath) {
     if (flutterAssetPath.startsWith("asset://")) return flutterAssetPath;
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      return "asset://flutter_assets/$flutterAssetPath";
-    }
     return "asset://$flutterAssetPath";
   }
 
