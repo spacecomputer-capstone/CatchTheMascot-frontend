@@ -10,6 +10,7 @@ import 'package:app/screens/helpers.dart';
 import 'package:app/utils/mascot_verification_helper.dart';
 
 import '6_catch_screen.dart';
+import 'dnd_combat_screen.dart';
 
 class MascotScreen extends StatefulWidget {
   final int mascotId;
@@ -116,6 +117,9 @@ class _MascotScreenState extends State<MascotScreen>
           await updateUser(CurrentUser.user!, context);
           if (!mounted) return;
         }
+
+        final String mName = _mascot!.mascotName.toLowerCase();
+        final bool isDndMascot = mName == 'storky' || mName == 'mascot_4' || mName == 'mascot_1';
 
         final didCatch = await Navigator.push<bool>(
           context,
