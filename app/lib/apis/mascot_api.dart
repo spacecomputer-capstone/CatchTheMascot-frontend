@@ -459,3 +459,12 @@ Future<void> deleteMascot(
     print('Failed to delete mascot: $e');
   }
 }
+
+// For instant inventory query
+Future<List<Mascot>> getMascotsByIds(List<int> ids) async {
+  if (ids.isEmpty) return [];
+  // Keep inventory reads on the same Firestore REST path used everywhere else
+  // in this codebase (`databases/mascot-database/...`) to avoid DB mismatch.
+  final results = await Future.wait(ids.map((id) => getMascot(id)));
+  return results.whereType<Mascot>().toList();
+}

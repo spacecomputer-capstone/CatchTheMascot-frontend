@@ -5,16 +5,19 @@ class MapIds {
   static const String playerSourceId = "player-source-id";
   static const String playerModelLayerId = "player-model-layer";
 
-  // PNG (still used as invisible click-hitbox)
-  static const String fixedMascotImageAsset =
-      'assets/icons/storke-nobackground.png';
+  // Player Path
+  static const String playerGlbAsset = 'assets/player/player.glb';
 
-  // GLB (the visible mascot)
-  static const String fixedMascotGlbAsset =
-      'assets/icons/storke-nobackground.glb';
+  // Base paths for mascots
+  static const String mascotGlbDir = 'lib/assets/3dmascots';
+  static const String mascotPngDir = 'lib/assets/mascotimages';
 
   static const double storkeLat = 34.412640;
   static const double storkeLng = -119.848396;
+
+  // Henley Hall
+  static const double henleyLat = 34.41687562912479;
+  static const double henleyLng = -119.8444312386711;
 
   static const double minZoom = 14.0;
   static const double maxZoom = 22.0;
@@ -24,16 +27,11 @@ class MapIds {
 
   static const double maxCameraUpdateHz = 10;
 
-  // Player faces backwards in your setup, so you offset 180
   static const double playerModelHeadingOffset = 180.0;
-
-  // Mascot model tuning – MATCH PLAYER SCALE
-  // Your PlayerModelController uses [10,10,10]
-  static const double mascotModelScale = 10.0;
-
-  // Player doesn't translate upward, so keep 0.0 for "same height"
-  static const double mascotModelHeightMeters = 0.0;
-
-  // If your storky faces backwards, set 180.0; otherwise keep 0.0
+  static const double mascotModelScale = 35.0;
+  
+  // Increased height from 0.0 to 3.0 meters to prevent mascots from being buried in the ground/terrain
+  static const double mascotModelHeightMeters = 3.0;
+  
   static const double mascotModelHeadingOffset = 0.0;
 }

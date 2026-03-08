@@ -42,6 +42,10 @@ class Mascot {
       map['coins'],
     );
   }
+
+  factory Mascot.fromJson(Map<String, dynamic> json) {
+    return Mascot.fromMap(json);
+  }
 }
 
 // storage to save highest mascotId locally

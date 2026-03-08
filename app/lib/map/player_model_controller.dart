@@ -1,5 +1,7 @@
 import 'dart:convert' as convert;
+import 'package:flutter/foundation.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' as mb;
+import 'map_ids.dart';
 
 class PlayerModelController {
   PlayerModelController({
@@ -22,28 +24,41 @@ class PlayerModelController {
     final point = mb.Point(coordinates: mb.Position(lng, lat));
     final data = convert.json.encode(point);
 
-    if (!_modelAdded) {
-      await map.style.addSource(
-        mb.GeoJsonSource(id: sourceId, data: data),
-      );
+    try {
+      final exists = await map.style.styleSourceExists(sourceId);
+      
+      if (!exists) {
+        await map.style.addSource(
+          mb.GeoJsonSource(id: sourceId, data: data),
+        );
 
-      final layer = mb.ModelLayer(id: layerId, sourceId: sourceId)
-        ..modelId = "asset://assets/player/player.glb"
-        ..modelScale = const [20.0, 20.0, 20.0]
-        ..modelRotation = const [0.0, 0.0, 0.0]
-        ..modelType = mb.ModelType.COMMON_3D;
+        final layer = mb.ModelLayer(id: layerId, sourceId: sourceId)
+          ..modelId = _modelUri(MapIds.playerGlbAsset)
+          ..modelScale = const [20.0, 20.0, 20.0]
+          ..modelRotation = const [0.0, 0.0, 0.0]
+          ..modelType = mb.ModelType.COMMON_3D;
 
-      await map.style.addLayer(layer);
-      _modelAdded = true;
-      return;
+        await map.style.addLayer(layer);
+        _modelAdded = true;
+        return;
+      }
+    } catch (e) {
+      debugPrint("Error checking/adding source: $e");
     }
 
-    // Move existing model by updating GeoJSON source data
+    // Move existing model
     await map.style.setStyleSourceProperty(sourceId, 'data', data);
+    _modelAdded = true;
+  }
+
+  String _modelUri(String flutterAssetPath) {
+    if (flutterAssetPath.startsWith("asset://")) return flutterAssetPath;
+    return "asset://$flutterAssetPath";
   }
 
   Future<void> setHeading(double gyroBearing) async {
-    if (!_modelAdded) return;
+    final exists = await map.style.styleLayerExists(layerId);
+    if (!exists) return;
 
     final yaw = ((gyroBearing + modelHeadingOffset) % 360 + 360) % 360;
 
