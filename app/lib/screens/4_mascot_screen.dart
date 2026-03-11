@@ -229,7 +229,7 @@ class _MascotScreenState extends State<MascotScreen>
 
   Future<bool> _runJwtPrimaryFlow() async {
     final result = await _verificationHelper.runJwtPrimaryFlow();
-    return result.verified;
+    return result;
   }
 
   Future<bool> _runLegacyFallbackFlow(Duration budget) async {
