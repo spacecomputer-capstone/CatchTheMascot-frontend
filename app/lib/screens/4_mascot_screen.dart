@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:app/state/current_user.dart';
 import 'package:app/apis/user_api.dart';
@@ -23,8 +24,8 @@ class MascotScreen extends StatefulWidget {
 
 class _MascotScreenState extends State<MascotScreen>
     with SingleTickerProviderStateMixin {
-  static const String _verificationFailedMessage = 
-      'We couldn’t verify your presence. Ensure you are at the correct location and try again.';
+  static const String _raccoonPiSsid = 'pi-724102c0a9';
+  static const String _storkiePiSsid = 'pi-a877d97d22';
   static const String _verifyingStatusMessage = 'Verifying presence…';
   static const String _legacyFallbackStatusMessage =
       'Hold tight — this is taking a little longer than usual…';
@@ -134,14 +135,14 @@ class _MascotScreenState extends State<MascotScreen>
       } else {
         setState(() {
           _isVerifying = false;
-          _verificationStatus = _verificationFailedMessage;
+          _verificationStatus = _verificationFailedMessage();
         });
       }
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _isVerifying = false;
-        _verificationStatus = _verificationFailedMessage;
+        _verificationStatus = _verificationFailedMessage();
       });
     }
   }
@@ -227,7 +228,8 @@ class _MascotScreenState extends State<MascotScreen>
   }
 
   Future<bool> _runJwtPrimaryFlow() async {
-    return _verificationHelper.runJwtPrimaryFlow();
+    final result = await _verificationHelper.runJwtPrimaryFlow();
+    return result.verified;
   }
 
   Future<bool> _runLegacyFallbackFlow(Duration budget) async {
@@ -243,11 +245,19 @@ class _MascotScreenState extends State<MascotScreen>
 
   Color _statusColor() {
     if (_isVerifying) return Colors.amber.shade300;
-    if (_verificationStatus == _verificationFailedMessage) {
+    if (_verificationStatus == _verificationFailedMessage()) {
       return Colors.redAccent.shade200;
     }
     if (_hasCaughtMascot) return Colors.lightGreenAccent.shade400;
     return Colors.white70;
+  }
+
+  String _verificationFailedMessage() {
+    final ssid = _targetPiSsid();
+    if (ssid == null) {
+      return 'We couldn’t verify your presence. Ensure you are at the correct location and try again.';
+    }
+    return 'We couldn’t verify your presence. Ensure you are at the correct location and connected to the wifi network "$ssid", then try again.';
   }
 
   Future<void> _loadMascot() async {
@@ -266,10 +276,37 @@ class _MascotScreenState extends State<MascotScreen>
   // Dynamic path based on your requirement: ID_Name.png
   String get mascotImagePath => "lib/assets/mascotimages/${widget.mascotId}_$mascotName.png";
 
+  String? _targetPiSsid() {
+    final normalized = mascotName.toLowerCase();
+    if (normalized.contains('stork')) return _storkiePiSsid;
+    if (normalized.contains('raccoon')) return _raccoonPiSsid;
+    return null;
+  }
+
+  String? _wifiInstructionMessage() {
+    final ssid = _targetPiSsid();
+    if (ssid == null) return null;
+    return 'Join Wi-Fi "$ssid" before challenging';
+  }
+
+  Future<void> _copyWifiCredential() async {
+    final ssid = _targetPiSsid();
+    if (ssid == null) return;
+    await Clipboard.setData(ClipboardData(text: ssid));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Wi-Fi password copied: "$ssid"'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     if (_mascot == null) return const Scaffold(body: Center(child: Text("Mascot not found")));
+    final compact = MediaQuery.of(context).size.height < 820;
 
     return Scaffold(
       appBar: AppBar(title: Text('$commonMascotName Encounter'), backgroundColor: Colors.transparent, elevation: 0, centerTitle: true),
@@ -282,15 +319,17 @@ class _MascotScreenState extends State<MascotScreen>
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 22.0),
             child: Column(
               children: [
                 _buildTopBar(),
-                const SizedBox(height: 16),
-                Expanded(child: _buildMascotCard()),
-                const SizedBox(height: 16),
+                SizedBox(height: compact ? 10 : 12),
+                Expanded(child: _buildMascotCard(compact)),
+                SizedBox(height: compact ? 10 : 16),
+                _buildWifiInstruction(),
+                SizedBox(height: compact ? 8 : 12),
                 _buildActionsRow(),
-                const SizedBox(height: 16),
+                SizedBox(height: compact ? 10 : 16),
                 _buildVerificationStatus(),
               ],
             ),
@@ -315,48 +354,50 @@ class _MascotScreenState extends State<MascotScreen>
     );
   }
 
-  Widget _buildMascotCard() {
+  Widget _buildMascotCard(bool compact) {
+    final imageFrame = compact ? 108.0 : 148.0;
+    final imageSize = compact ? 96.0 : 126.0;
     return Card(
       elevation: 14, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)), color: Colors.white.withOpacity(0.96),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+        padding: EdgeInsets.fromLTRB(18, compact ? 12 : 16, 18, compact ? 12 : 16),
         child: Column(
           children: [
             Row(
               children: [
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(commonMascotName, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                  Text(commonMascotName, style: TextStyle(fontSize: compact ? 21 : 24, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
-                  Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: rarityColor.withOpacity(0.2), borderRadius: BorderRadius.circular(6)), child: Text(mascotTier, style: TextStyle(fontSize: 13, color: rarityColor, fontWeight: FontWeight.w600))),
+                  Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: rarityColor.withOpacity(0.2), borderRadius: BorderRadius.circular(6)), child: Text(mascotTier, style: TextStyle(fontSize: compact ? 12 : 13, color: rarityColor, fontWeight: FontWeight.w600))),
                 ])),
-                Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: _hasCaughtMascot ? Colors.green.shade100 : Colors.orange.shade100, borderRadius: BorderRadius.circular(999)), child: Row(children: [Icon(_hasCaughtMascot ? Icons.check_circle : Icons.blur_on, size: 18, color: _hasCaughtMascot ? Colors.green.shade800 : Colors.orange.shade800), const SizedBox(width: 4), Text(_hasCaughtMascot ? 'Caught' : 'Not caught', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _hasCaughtMascot ? Colors.green.shade800 : Colors.orange.shade800))])),
+                Container(padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 10, vertical: compact ? 5 : 6), decoration: BoxDecoration(color: _hasCaughtMascot ? Colors.green.shade100 : Colors.orange.shade100, borderRadius: BorderRadius.circular(999)), child: Row(children: [Icon(_hasCaughtMascot ? Icons.check_circle : Icons.blur_on, size: compact ? 16 : 18, color: _hasCaughtMascot ? Colors.green.shade800 : Colors.orange.shade800), const SizedBox(width: 4), Text(_hasCaughtMascot ? 'Caught' : 'Not caught', style: TextStyle(fontSize: compact ? 11 : 12, fontWeight: FontWeight.w600, color: _hasCaughtMascot ? Colors.green.shade800 : Colors.orange.shade800))])),
               ],
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: compact ? 6 : 8),
             SizedBox(
-              height: 170,
+              height: imageFrame,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  Container(width: 140, height: 140, decoration: BoxDecoration(shape: BoxShape.circle, gradient: const RadialGradient(colors: [Color(0xFF4263EB), Color(0xFFB3C5FF)], radius: 0.85), boxShadow: [BoxShadow(color: Colors.blue.shade200.withOpacity(0.5), blurRadius: 30, spreadRadius: 5)])),
+                  Container(width: imageSize, height: imageSize, decoration: BoxDecoration(shape: BoxShape.circle, gradient: const RadialGradient(colors: [Color(0xFF4263EB), Color(0xFFB3C5FF)], radius: 0.85), boxShadow: [BoxShadow(color: Colors.blue.shade200.withOpacity(0.5), blurRadius: compact ? 20 : 30, spreadRadius: compact ? 2 : 5)])),
                   Hero(
                     tag: 'mascot-$mascotName',
-                    child: _isVerifying 
-                      ? ScaleTransition(scale: _pulseController, child: Image.asset(mascotImagePath, fit: BoxFit.contain, height: 140, errorBuilder: (_,__,___) => const Icon(Icons.broken_image, size: 50)))
-                      : Image.asset(mascotImagePath, fit: BoxFit.contain, height: 140, errorBuilder: (_,__,___) => const Icon(Icons.broken_image, size: 50)),
+                    child: _isVerifying
+                        ? ScaleTransition(scale: _pulseController, child: Image.asset(mascotImagePath, fit: BoxFit.contain, height: imageSize, errorBuilder: (_,__,___) => const Icon(Icons.broken_image, size: 50)))
+                        : Image.asset(mascotImagePath, fit: BoxFit.contain, height: imageSize, errorBuilder: (_,__,___) => const Icon(Icons.broken_image, size: 50)),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 12),
-            const Divider(height: 24),
-            _buildDetailRow('Location', _mascotLocation),
-            _buildDetailRow('Coins to Challenge', '$coinsToChallenge'),
-            _buildDetailRow('Base Catch Odds', '${(catchProbability * 100).round()}%'),
-            const SizedBox(height: 8),
-            Align(alignment: Alignment.centerLeft, child: Text('Difficulty', style: TextStyle(fontSize: 13, color: Colors.grey.shade700, fontWeight: FontWeight.w600))),
+            SizedBox(height: compact ? 6 : 8),
+            Divider(height: compact ? 12 : 18),
+            _buildDetailRow('Location', _mascotLocation, compact: compact),
+            _buildDetailRow('Coins to Challenge', '$coinsToChallenge', compact: compact),
+            _buildDetailRow('Base Catch Odds', '${(catchProbability * 100).round()}%', compact: compact),
+            SizedBox(height: compact ? 4 : 8),
+            Align(alignment: Alignment.centerLeft, child: Text('Difficulty', style: TextStyle(fontSize: compact ? 12 : 13, color: Colors.grey.shade700, fontWeight: FontWeight.w600))),
             const SizedBox(height: 4),
-            ClipRRect(borderRadius: BorderRadius.circular(999), child: LinearProgressIndicator(minHeight: 9, value: (_mascot?.rarity ?? 0.5), backgroundColor: Colors.grey.shade200, valueColor: AlwaysStoppedAnimation<Color>(rarityColor))),
+            ClipRRect(borderRadius: BorderRadius.circular(999), child: LinearProgressIndicator(minHeight: compact ? 8 : 9, value: (_mascot?.rarity ?? 0.5), backgroundColor: Colors.grey.shade200, valueColor: AlwaysStoppedAnimation<Color>(rarityColor))),
           ],
         ),
       ),
@@ -374,6 +415,66 @@ class _MascotScreenState extends State<MascotScreen>
     );
   }
 
+  Widget _buildWifiInstruction() {
+    final message = _wifiInstructionMessage();
+    final ssid = _targetPiSsid();
+    if (message == null || ssid == null) return const SizedBox.shrink();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white12),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            const Icon(Icons.wifi, color: Colors.white70, size: 16),
+            const SizedBox(width: 6),
+            Text(
+              message,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(width: 6),
+            InkWell(
+              onTap: _copyWifiCredential,
+              borderRadius: BorderRadius.circular(999),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.copy_rounded, color: Colors.white70, size: 12),
+                    SizedBox(width: 3),
+                    Text(
+                      'Copy',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildVerificationStatus() {
     final showHint = !_hasAttempted && !_isVerifying && !_hasCaughtMascot;
     return Container(
@@ -383,16 +484,16 @@ class _MascotScreenState extends State<MascotScreen>
         children: [
           if (_isVerifying) ...[const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 3)), const SizedBox(width: 8)] 
           else ...[Icon(_hasCaughtMascot ? Icons.stars : (showHint ? Icons.lightbulb_outline : Icons.info_outline), color: _statusColor()), const SizedBox(width: 8)],
-          Expanded(child: AnimatedDefaultTextStyle(duration: const Duration(milliseconds: 250), style: TextStyle(color: _statusColor(), fontSize: 14), child: Text(showHint ? 'Spend $coinsToChallenge Campus Coin(s) to challenge $commonMascotName. We’ll verify your presence, then you can try to catch it!' : _verificationStatus))),
+          Expanded(child: AnimatedDefaultTextStyle(duration: const Duration(milliseconds: 250), style: TextStyle(color: _statusColor(), fontSize: 14), child: Text(showHint ? 'Spend $coinsToChallenge Campus Coin(s) to challenge $commonMascotName.' : _verificationStatus))),
         ],
       ),
     );
   }
 
-  Widget _buildDetailRow(String title, String value) {
+  Widget _buildDetailRow(String title, String value, {bool compact = false}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)), const SizedBox(width: 12), Flexible(child: Text(value, style: const TextStyle(fontSize: 14), textAlign: TextAlign.right))]),
+      padding: EdgeInsets.symmetric(vertical: compact ? 2.0 : 4.0),
+      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(title, style: TextStyle(fontSize: compact ? 13 : 14, fontWeight: FontWeight.bold)), const SizedBox(width: 12), Flexible(child: Text(value, style: TextStyle(fontSize: compact ? 13 : 14), textAlign: TextAlign.right))]),
     );
   }
 }
