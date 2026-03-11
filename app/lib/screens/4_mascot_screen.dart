@@ -319,7 +319,7 @@ class _MascotScreenState extends State<MascotScreen>
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 22.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 19.0),
             child: Column(
               children: [
                 _buildTopBar(),
